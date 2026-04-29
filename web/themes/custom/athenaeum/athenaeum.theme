@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * @file
+ * Athenaeum theme functions.
+ */
+
+use Drupal\node\NodeInterface;
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function athenaeum_preprocess_node(&$variables) {
+  $node = $variables['node'];
+  if ($node instanceof NodeInterface && $node->bundle() === 'featured_article') {
+    if ($node->hasField('field_word_count') && !$node->get('field_word_count')->isEmpty()) {
+      $word_count = $node->get('field_word_count')->value;
+      $variables['reading_minutes'] = max(1, round($word_count / 200));
+    }
+    if ($node->hasField('field_topics') && !$node->get('field_topics')->isEmpty()) {
+      $topics = [];
+      foreach ($node->get('field_topics') as $topic_ref) {
+        if ($term = $topic_ref->entity) {
+          $topics[] = [
+            'name' => $term->getName(),
+            'url' => \Drupal\Core\Url::fromRoute('entity.node.canonical', [])
+              ->toString(),
+          ];
+        }
+      }
+      $variables['topic_list'] = $topics;
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function athenaeum_preprocess_page(&$variables) {
+  $variables['site_name'] = \Drupal::config('system.site')->get('name');
+  $variables['current_year'] = date('Y');
+}

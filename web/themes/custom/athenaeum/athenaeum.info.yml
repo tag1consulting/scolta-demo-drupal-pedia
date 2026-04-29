@@ -1,0 +1,17 @@
+name: The Athenaeum
+type: theme
+description: 'Encyclopedia theme with warm library aesthetic for The Athenaeum Wikipedia Featured Articles demo.'
+core_version_requirement: ^11
+base theme: false
+libraries:
+  - athenaeum/global
+
+regions:
+  header: Header
+  primary_menu: 'Primary Menu'
+  breadcrumb: Breadcrumb
+  highlighted: Highlighted
+  content: Content
+  sidebar_first: 'Sidebar First'
+  sidebar_second: 'Sidebar Second'
+  footer: Footer

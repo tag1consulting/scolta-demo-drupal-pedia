@@ -1,0 +1,20 @@
+uuid: b67a5d62-31b8-4ea5-8473-075c1fb6ed5a
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: node.field_wikipedia_pageid
+field_name: field_wikipedia_pageid
+entity_type: node
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

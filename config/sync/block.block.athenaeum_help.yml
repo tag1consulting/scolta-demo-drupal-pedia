@@ -1,0 +1,22 @@
+uuid: 8d1704c3-738e-45bc-8ae2-e85207a93843
+langcode: en
+status: true
+dependencies:
+  module:
+    - help
+  theme:
+    - athenaeum
+_core:
+  default_config_hash: VfPFqqxfkomud5CO8DUijw85QIl9GIxh_nIxLOYESxg
+id: athenaeum_help
+theme: athenaeum
+region: header
+weight: 0
+provider: null
+plugin: help_block
+settings:
+  id: help_block
+  label: Help
+  label_display: '0'
+  provider: help
+visibility: {  }

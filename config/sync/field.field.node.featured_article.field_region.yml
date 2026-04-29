@@ -1,0 +1,24 @@
+uuid: 57f487ed-9f2f-4c02-94f2-3c31d34b4dac
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_region
+    - node.type.featured_article
+    - taxonomy.vocabulary.region
+id: node.featured_article.field_region
+field_name: field_region
+entity_type: node
+bundle: featured_article
+label: Region
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      region: region
+field_type: entity_reference

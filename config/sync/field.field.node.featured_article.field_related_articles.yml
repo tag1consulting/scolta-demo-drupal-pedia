@@ -1,0 +1,23 @@
+uuid: d43b2d38-d55a-4a7c-9cd5-2a49be2b570a
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_related_articles
+    - node.type.featured_article
+id: node.featured_article.field_related_articles
+field_name: field_related_articles
+entity_type: node
+bundle: featured_article
+label: 'Related Articles'
+description: 'Cross-references from Wikipedia "See also" section.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:node'
+  handler_settings:
+    target_bundles:
+      featured_article: featured_article
+field_type: entity_reference

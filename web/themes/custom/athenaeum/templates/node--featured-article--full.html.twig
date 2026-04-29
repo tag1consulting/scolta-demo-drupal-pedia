@@ -1,0 +1,193 @@
+{%
+  set classes = [
+    'node',
+    'node--type-' ~ node.bundle|clean_class,
+    not node.isPublished() ? 'node--unpublished',
+  ]
+%}
+<article{{ attributes.addClass(classes) }}>
+
+  <div class="page-wrapper page-wrapper--article">
+    {# Main article content #}
+    <div class="article-main">
+
+      {# Article header #}
+      <header class="article-header">
+        <h1 class="article-header__title">{{ node.label }}</h1>
+
+        <div class="article-meta">
+          {% if content.field_topics %}
+            <div class="article-meta__item">
+              {% for topic in node.field_topics %}
+                <span class="topic-badge">{{ topic.entity.name.value }}</span>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          {% if node.field_era.entity %}
+            <div class="article-meta__item">
+              <span>📅</span>
+              <span>{{ node.field_era.entity.name.value }}</span>
+            </div>
+          {% endif %}
+
+          {% if node.field_region.entity %}
+            <div class="article-meta__item">
+              <span>🌍</span>
+              <span>{{ node.field_region.entity.name.value }}</span>
+            </div>
+          {% endif %}
+
+          {% if node.field_word_count.value %}
+            <div class="article-meta__item">
+              <span>📖</span>
+              <span>{{ node.field_word_count.value|number_format }} words (≈{{ reading_minutes }} min read)</span>
+            </div>
+          {% endif %}
+
+          {% if node.field_featured_date.value %}
+            <div class="article-meta__item">
+              <span>⭐</span>
+              <span>Featured {{ node.field_featured_date.value|date('F j, Y') }}</span>
+            </div>
+          {% endif %}
+        </div>
+      </header>
+
+      {# Lead image (right-floated) #}
+      {% if content.field_image %}
+        <div class="article-image">
+          {{ content.field_image }}
+          {% if node.field_image_credit.value %}
+            <div class="article-image__credit">{{ node.field_image_credit.value }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      {# Lead / summary #}
+      {% if node.field_lead.value %}
+        <div class="article-lead">
+          {{ node.field_lead.value }}
+        </div>
+      {% endif %}
+
+      {# "Why This Matters" enrichment blurb #}
+      {% if node.field_why_it_matters.value %}
+        <div class="featured-highlight">
+          <div class="featured-highlight__label">✨ Why This Matters</div>
+          {{ node.field_why_it_matters.value }}
+        </div>
+      {% endif %}
+
+      {# Article body #}
+      <div class="article-body">
+        {{ content.body }}
+      </div>
+
+      {# Related articles #}
+      {% if content.field_related_articles %}
+        <section class="article-section">
+          <h2>See Also</h2>
+          <div class="article-grid">
+            {{ content.field_related_articles }}
+          </div>
+        </section>
+      {% endif %}
+
+      {# Wikipedia attribution (required for CC BY-SA 4.0) #}
+      <div class="article-attribution">
+        <strong>Attribution:</strong>
+        This article is adapted from
+        {% if node.field_original_url.uri %}
+          <a href="{{ node.field_original_url.uri }}" target="_blank" rel="noopener">{{ node.label }}</a>
+        {% else %}
+          <em>{{ node.label }}</em>
+        {% endif %}
+        on <a href="https://en.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a>,
+        used under the
+        <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</a> license.
+        Content may have been edited for formatting.
+      </div>
+
+    </div>{# /article-main #}
+
+    {# Sidebar: TOC + metadata #}
+    <aside class="article-sidebar">
+
+      {# Table of Contents (placeholder — JS will populate from headings) #}
+      <div class="toc-card" id="article-toc">
+        <div class="toc-card__header">
+          Contents
+          <span class="toc-toggle-icon">−</span>
+        </div>
+        <div class="toc-card__body" id="toc-body">
+          <em style="color:#999;font-size:0.82rem">Loading…</em>
+        </div>
+      </div>
+
+      {# Article metadata card #}
+      <div class="toc-card" style="margin-top:1rem">
+        <div class="toc-card__header">Article Info</div>
+        <div class="toc-card__body">
+          <table style="font-size:0.82rem;width:100%;border:none">
+            {% if node.field_reference_count.value %}
+              <tr>
+                <td style="color:#888;padding:0.3rem 0">References</td>
+                <td style="font-weight:bold;text-align:right">{{ node.field_reference_count.value }}</td>
+              </tr>
+            {% endif %}
+            {% if node.field_featured_date.value %}
+              <tr>
+                <td style="color:#888;padding:0.3rem 0">Featured</td>
+                <td style="font-weight:bold;text-align:right">{{ node.field_featured_date.value|date('M Y') }}</td>
+              </tr>
+            {% endif %}
+          </table>
+
+          {% if node.field_original_url.uri %}
+            <div style="margin-top:0.8rem">
+              <a href="{{ node.field_original_url.uri }}" target="_blank" rel="noopener"
+                 style="font-size:0.82rem">
+                📄 View on Wikipedia →
+              </a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+    </aside>
+  </div>{# /page-wrapper--article #}
+
+</article>
+
+<script>
+// Build table of contents from article headings
+(function() {
+  const body = document.querySelector('.article-body');
+  const toc = document.getElementById('toc-body');
+  if (!body || !toc) return;
+  const headings = body.querySelectorAll('h2, h3');
+  if (headings.length < 2) { toc.innerHTML = '<em style="color:#999;font-size:0.82rem">No sections</em>'; return; }
+  const ol = document.createElement('ol');
+  let currentLi = null;
+  let subOl = null;
+  headings.forEach(function(h, i) {
+    h.id = h.id || 'section-' + i;
+    const a = document.createElement('a');
+    a.href = '#' + h.id;
+    a.textContent = h.textContent;
+    const li = document.createElement('li');
+    li.appendChild(a);
+    if (h.tagName === 'H2') {
+      ol.appendChild(li);
+      currentLi = li;
+      subOl = null;
+    } else {
+      if (!subOl) { subOl = document.createElement('ol'); if (currentLi) currentLi.appendChild(subOl); else ol.appendChild(subOl); }
+      subOl.appendChild(li);
+    }
+  });
+  toc.innerHTML = '';
+  toc.appendChild(ol);
+})();
+</script>

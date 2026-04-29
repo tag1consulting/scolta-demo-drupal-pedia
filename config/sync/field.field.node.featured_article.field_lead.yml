@@ -1,0 +1,22 @@
+uuid: a081d9e4-86c0-459d-8d05-096d46bb27ba
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_lead
+    - node.type.featured_article
+  module:
+    - text
+id: node.featured_article.field_lead
+field_name: field_lead
+entity_type: node
+bundle: featured_article
+label: 'Lead / Summary'
+description: 'Opening paragraph — the article summary.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

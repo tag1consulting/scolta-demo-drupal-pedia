@@ -1,0 +1,24 @@
+uuid: af50d074-b0d5-44e2-8636-e80fcf699ec8
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_era
+    - node.type.featured_article
+    - taxonomy.vocabulary.era
+id: node.featured_article.field_era
+field_name: field_era
+entity_type: node
+bundle: featured_article
+label: Era
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      era: era
+field_type: entity_reference

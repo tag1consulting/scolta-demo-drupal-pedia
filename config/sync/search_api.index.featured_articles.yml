@@ -1,0 +1,121 @@
+uuid: 5a220ea3-3cb2-4450-bf94-f39e7e892ed4
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.body
+    - field.storage.node.field_era
+    - field.storage.node.field_lead
+    - field.storage.node.field_region
+    - field.storage.node.field_topics
+    - field.storage.node.field_why_it_matters
+    - search_api.server.athenaeum_scolta
+  module:
+    - node
+    - taxonomy
+id: featured_articles
+name: 'Featured Articles'
+description: 'Index of all Wikipedia Featured Articles for Scolta search.'
+read_only: false
+field_settings:
+  body:
+    label: Body
+    datasource_id: 'entity:node'
+    property_path: body
+    type: text
+    dependencies:
+      config:
+        - field.storage.node.body
+  field_era:
+    label: Era
+    datasource_id: 'entity:node'
+    property_path: 'field_era:entity:name'
+    type: string
+    dependencies:
+      config:
+        - field.storage.node.field_era
+      module:
+        - taxonomy
+  field_lead:
+    label: 'Lead / Summary'
+    datasource_id: 'entity:node'
+    property_path: field_lead
+    type: text
+    boost: 3.0
+    dependencies:
+      config:
+        - field.storage.node.field_lead
+  field_region:
+    label: Region
+    datasource_id: 'entity:node'
+    property_path: 'field_region:entity:name'
+    type: string
+    dependencies:
+      config:
+        - field.storage.node.field_region
+      module:
+        - taxonomy
+  field_topics:
+    label: Topics
+    datasource_id: 'entity:node'
+    property_path: 'field_topics:entity:name'
+    type: string
+    boost: 2.0
+    dependencies:
+      config:
+        - field.storage.node.field_topics
+      module:
+        - taxonomy
+  field_why_it_matters:
+    label: 'Why It Matters'
+    datasource_id: 'entity:node'
+    property_path: field_why_it_matters
+    type: text
+    boost: 2.0
+    dependencies:
+      config:
+        - field.storage.node.field_why_it_matters
+  title:
+    label: Title
+    datasource_id: 'entity:node'
+    property_path: title
+    type: text
+    boost: 5.0
+    dependencies:
+      module:
+        - node
+datasource_settings:
+  'entity:node':
+    bundles:
+      default: true
+      selected: {  }
+    languages:
+      default: true
+      selected: {  }
+    plugin_id: 'entity:node'
+    settings:
+      bundles:
+        default: false
+        selected:
+          - featured_article
+      languages:
+        default: true
+        selected: {  }
+processor_settings:
+  add_url: {  }
+  aggregated_field: {  }
+  custom_value: {  }
+  entity_type: {  }
+  language_with_fallback: {  }
+  rendered_item: {  }
+tracker_settings:
+  default:
+    indexing_order: fifo
+    plugin_id: default
+    settings: {  }
+options:
+  cron_limit: 100
+  delete_on_fail: true
+  index_directly: false
+  track_changes_in_references: true
+server: athenaeum_scolta

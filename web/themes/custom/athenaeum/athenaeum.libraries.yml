@@ -1,0 +1,18 @@
+global:
+  version: 1.x
+  css:
+    theme:
+      css/athenaeum.css: {}
+  js:
+    js/athenaeum.js: {}
+  dependencies:
+    - core/drupal
+    - core/jquery
+
+leaflet:
+  version: 1.x
+  js:
+    https://unpkg.com/leaflet@1.9.4/dist/leaflet.js: { type: external, minified: true }
+  css:
+    theme:
+      https://unpkg.com/leaflet@1.9.4/dist/leaflet.css: { type: external }

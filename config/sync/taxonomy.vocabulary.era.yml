@@ -1,0 +1,9 @@
+uuid: 248dcfba-eb50-4e51-89fa-f1acebdaaecb
+langcode: en
+status: true
+dependencies: {  }
+name: Era
+vid: era
+description: 'Temporal classification of article subjects'
+weight: 0
+new_revision: false

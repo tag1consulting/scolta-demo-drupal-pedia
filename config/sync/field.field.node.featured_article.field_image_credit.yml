@@ -1,0 +1,19 @@
+uuid: ebdd378c-62c5-44af-a6ab-5a2f808db4b3
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_image_credit
+    - node.type.featured_article
+id: node.featured_article.field_image_credit
+field_name: field_image_credit
+entity_type: node
+bundle: featured_article
+label: 'Image Credit & License'
+description: 'Attribution and license information for the lead image.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

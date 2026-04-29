@@ -1,0 +1,20 @@
+uuid: 033dac1a-ccf3-435e-8a88-0328d585940d
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: node.field_word_count
+field_name: field_word_count
+entity_type: node
+type: integer
+settings:
+  unsigned: false
+  size: normal
+module: core
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

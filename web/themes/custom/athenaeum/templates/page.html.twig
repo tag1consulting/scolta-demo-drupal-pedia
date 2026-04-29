@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html{{ html_attributes }}>
+<head>
+  <head-placeholder token="{{ placeholder_token }}">
+  <title>{{ head_title | safe_join(' | ') }}</title>
+  <css-placeholder token="{{ placeholder_token }}">
+  <js-placeholder token="{{ placeholder_token }}">
+</head>
+<body{{ attributes }}>
+  <a href="#main-content" class="visually-hidden">Skip to main content</a>
+
+  {# Site Header #}
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a href="/" class="site-header__branding" title="The Athenaeum — Home">
+        <span class="site-header__logo">𝔸</span>
+        <div>
+          <div class="site-header__title">The Athenaeum</div>
+          <div class="site-header__tagline">Wikipedia's Featured Articles</div>
+        </div>
+      </a>
+
+      <div class="header-search" role="search">
+        <form action="/search" method="get">
+          <input type="search" name="keys" placeholder="Search 6,000 featured articles…"
+                 aria-label="Search articles">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  {# Primary Navigation #}
+  <nav class="primary-nav" role="navigation" aria-label="Primary navigation">
+    <div class="primary-nav__inner">
+      <ul>
+        <li><a href="/" {{ is_front ? 'class="is-active"' }}>Home</a></li>
+        <li><a href="/articles">Browse All</a></li>
+        <li><a href="/topics">By Topic</a></li>
+        <li><a href="/eras">By Era</a></li>
+        <li><a href="/regions">By Region</a></li>
+        <li><a href="/map">Map</a></li>
+        <li><a href="/random">Random</a></li>
+        <li><a href="/search">Search</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  {# Breadcrumb #}
+  {% if page.breadcrumb %}
+    <div class="breadcrumb-bar">
+      <div class="breadcrumb-bar__inner">
+        {{ page.breadcrumb }}
+      </div>
+    </div>
+  {% endif %}
+
+  {# Highlighted messages #}
+  {% if page.highlighted %}
+    <div class="highlighted">
+      {{ page.highlighted }}
+    </div>
+  {% endif %}
+
+  {# Main content #}
+  <main id="main-content" role="main">
+    {{ page.content }}
+  </main>
+
+  {# Footer #}
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">
+      <div>
+        <h3>The Athenaeum</h3>
+        <p>A curated encyclopedia of Wikipedia's ~6,000 Featured Articles — the encyclopedia's highest quality entries, spanning every domain of human knowledge.</p>
+        <p>Demonstrating <strong style="color:#fff">Scolta</strong> cross-domain semantic search by <a href="https://tag1consulting.com" target="_blank" rel="noopener">Tag1 Consulting</a>.</p>
+      </div>
+      <div>
+        <h3>Browse</h3>
+        <ul style="list-style:none;margin:0;padding:0;line-height:2">
+          <li><a href="/topics">By Topic</a></li>
+          <li><a href="/eras">By Era</a></li>
+          <li><a href="/regions">By Region</a></li>
+          <li><a href="/map">World Map</a></li>
+          <li><a href="/random">Random Article</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>About</h3>
+        <ul style="list-style:none;margin:0;padding:0;line-height:2">
+          <li><a href="/about">About This Site</a></li>
+          <li><a href="https://en.wikipedia.org/wiki/Wikipedia:Featured_articles" target="_blank" rel="noopener">Wikipedia Featured Articles</a></li>
+          <li><a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0 License</a></li>
+          <li><a href="/sources">Sources & Attribution</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <div>
+        <span class="cc-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+          CC BY-SA 4.0
+        </span>
+        Content from <a href="https://en.wikipedia.org/wiki/Wikipedia:Featured_articles" target="_blank" rel="noopener">Wikipedia's Featured Articles</a>, used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+        This site demonstrates <a href="https://tag1consulting.com/scolta" target="_blank" rel="noopener">Scolta</a> search technology.
+      </div>
+      <div>© {{ current_year }} Tag1 Consulting</div>
+    </div>
+  </footer>
+
+  <js-bottom-placeholder token="{{ placeholder_token }}">
+</body>
+</html>

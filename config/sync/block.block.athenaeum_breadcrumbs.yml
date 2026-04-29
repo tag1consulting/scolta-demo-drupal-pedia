@@ -1,0 +1,22 @@
+uuid: 2adc12bf-7c8e-4c12-ac5c-d1e2d5cc9264
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - athenaeum
+_core:
+  default_config_hash: VhBzWb7lMRtIOg9G7VSw_0uopi-7zXeHq4vXqqV1HFE
+id: athenaeum_breadcrumbs
+theme: athenaeum
+region: breadcrumb
+weight: 0
+provider: null
+plugin: system_breadcrumb_block
+settings:
+  id: system_breadcrumb_block
+  label: Breadcrumbs
+  label_display: '0'
+  provider: system
+visibility: {  }

@@ -1,0 +1,9 @@
+name: 'Athenaeum Scolta Integration'
+type: module
+description: 'Site-specific Scolta search configuration and theming wrapper for The Athenaeum. Delegates all search logic to tag1/scolta-drupal.'
+core_version_requirement: ^11
+package: 'The Athenaeum'
+dependencies:
+  - scolta:scolta
+  - drupal:node
+  - drupal:taxonomy

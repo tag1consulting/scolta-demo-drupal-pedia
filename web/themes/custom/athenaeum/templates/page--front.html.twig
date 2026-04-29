@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html{{ html_attributes }}>
+<head>
+  <head-placeholder token="{{ placeholder_token }}">
+  <title>{{ head_title | safe_join(' | ') }}</title>
+  <css-placeholder token="{{ placeholder_token }}">
+  <js-placeholder token="{{ placeholder_token }}">
+</head>
+<body{{ attributes }}>
+  <a href="#main-content" class="visually-hidden">Skip to main content</a>
+
+  {# Site Header (compact on homepage — search is in hero) #}
+  <header class="site-header" role="banner">
+    <div class="site-header__inner">
+      <a href="/" class="site-header__branding" title="The Athenaeum — Home">
+        <span class="site-header__logo">𝔸</span>
+        <div>
+          <div class="site-header__title">The Athenaeum</div>
+          <div class="site-header__tagline">Wikipedia's Featured Articles</div>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <nav class="primary-nav" role="navigation" aria-label="Primary navigation">
+    <div class="primary-nav__inner">
+      <ul>
+        <li><a href="/" class="is-active">Home</a></li>
+        <li><a href="/articles">Browse All</a></li>
+        <li><a href="/topics">By Topic</a></li>
+        <li><a href="/eras">By Era</a></li>
+        <li><a href="/regions">By Region</a></li>
+        <li><a href="/map">Map</a></li>
+        <li><a href="/random">Random</a></li>
+        <li><a href="/search">Search</a></li>
+        <li><a href="/about">About</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main id="main-content" role="main">
+
+    {# Hero search #}
+    <section class="hero-search">
+      <h1 class="hero-search__title">Explore Human Knowledge</h1>
+      <p class="hero-search__subtitle">6,000 of Wikipedia's finest articles, searchable with Scolta semantic AI</p>
+
+      <form class="hero-search__form" action="/search" method="get">
+        <input class="hero-search__input" type="search" name="keys"
+               placeholder="Try: ancient water systems, survival in extreme conditions, beautiful mathematics…"
+               aria-label="Search featured articles">
+        <button class="hero-search__btn" type="submit">Search</button>
+      </form>
+
+      <div class="hero-search__examples">
+        Example: &nbsp;
+        <a data-example-query="ancient water systems">ancient water systems</a> &nbsp;·&nbsp;
+        <a data-example-query="animals that build">animals that build</a> &nbsp;·&nbsp;
+        <a data-example-query="forgotten kingdoms">forgotten kingdoms</a> &nbsp;·&nbsp;
+        <a data-example-query="when science was wrong">when science was wrong</a>
+      </div>
+    </section>
+
+    <div class="page-wrapper">
+
+      {# Topic Grid #}
+      <section style="margin-top:2rem">
+        <h2 style="font-family:var(--font-serif);color:var(--color-navy);border-bottom:2px solid var(--color-border);padding-bottom:0.5rem">
+          Browse by Topic
+        </h2>
+        <div class="topic-grid">
+          <a class="topic-tile" href="/topic/science"><div class="topic-tile__icon">🔬</div><div class="topic-tile__name">Science</div></a>
+          <a class="topic-tile" href="/topic/history"><div class="topic-tile__icon">📜</div><div class="topic-tile__name">History</div></a>
+          <a class="topic-tile" href="/topic/geography"><div class="topic-tile__icon">🌍</div><div class="topic-tile__name">Geography</div></a>
+          <a class="topic-tile" href="/topic/biography"><div class="topic-tile__icon">👤</div><div class="topic-tile__name">Biography</div></a>
+          <a class="topic-tile" href="/topic/arts"><div class="topic-tile__icon">🎨</div><div class="topic-tile__name">Arts</div></a>
+          <a class="topic-tile" href="/topic/technology"><div class="topic-tile__icon">⚙️</div><div class="topic-tile__name">Technology</div></a>
+          <a class="topic-tile" href="/topic/nature"><div class="topic-tile__icon">🌿</div><div class="topic-tile__name">Nature</div></a>
+          <a class="topic-tile" href="/topic/society"><div class="topic-tile__icon">🏛️</div><div class="topic-tile__name">Society</div></a>
+          <a class="topic-tile" href="/topic/military"><div class="topic-tile__icon">⚔️</div><div class="topic-tile__name">Military</div></a>
+          <a class="topic-tile" href="/topic/mathematics"><div class="topic-tile__icon">∑</div><div class="topic-tile__name">Mathematics</div></a>
+          <a class="topic-tile" href="/topic/medicine"><div class="topic-tile__icon">🩺</div><div class="topic-tile__name">Medicine</div></a>
+          <a class="topic-tile" href="/topic/religion"><div class="topic-tile__icon">☯️</div><div class="topic-tile__name">Religion</div></a>
+          <a class="topic-tile" href="/topic/philosophy"><div class="topic-tile__icon">💭</div><div class="topic-tile__name">Philosophy</div></a>
+          <a class="topic-tile" href="/topic/sports"><div class="topic-tile__icon">🏆</div><div class="topic-tile__name">Sports</div></a>
+          <a class="topic-tile" href="/topic/engineering"><div class="topic-tile__icon">🏗️</div><div class="topic-tile__name">Engineering</div></a>
+        </div>
+      </section>
+
+      {# Scolta showcase queries #}
+      <section style="margin-top:3rem;background:var(--color-card-bg);border:1px solid var(--color-border);border-radius:6px;padding:2rem">
+        <h2 style="font-family:var(--font-serif);color:var(--color-navy);margin-top:0">🔍 Try These Semantic Searches</h2>
+        <p style="color:#555;font-size:0.9rem">Scolta finds cross-domain connections that keyword search cannot — try these queries to see:</p>
+        <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:1rem">
+          {% for q in [
+            'ancient water systems',
+            'survival in extreme conditions',
+            'beautiful mathematics',
+            'things that changed the world overnight',
+            'animals that build',
+            'forgotten kingdoms',
+            'music and revolution',
+            'tiny things with huge impact',
+            'when science was wrong',
+          ] %}
+            <a href="/search?keys={{ q|url_encode }}"
+               style="display:inline-block;background:var(--color-parchment-dark);border:1px solid var(--color-border);border-radius:4px;padding:0.4rem 0.8rem;font-size:0.88rem;color:var(--color-navy);text-decoration:none">
+              {{ q }}
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      {# Content placeholder - will be replaced by Views in Session 4 #}
+      <section style="margin-top:3rem;background:var(--color-parchment-dark);border:1px dashed var(--color-border);border-radius:6px;padding:2rem;text-align:center;color:#999">
+        <p style="font-size:1.1rem;margin:0">📚 Article listings load here after content import (Session 2)</p>
+        <p style="font-size:0.85rem;margin:0.5rem 0 0">Run <code>drush athenaeum:import-articles</code> to populate the encyclopedia</p>
+      </section>
+
+    </div>{# /page-wrapper #}
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__inner">
+      <div>
+        <h3>The Athenaeum</h3>
+        <p>A curated encyclopedia of Wikipedia's ~6,000 Featured Articles — the encyclopedia's highest quality entries, spanning every domain of human knowledge.</p>
+        <p>Demonstrating <strong style="color:#fff">Scolta</strong> cross-domain semantic search by <a href="https://tag1consulting.com" target="_blank" rel="noopener">Tag1 Consulting</a>.</p>
+      </div>
+      <div>
+        <h3>Browse</h3>
+        <ul style="list-style:none;margin:0;padding:0;line-height:2">
+          <li><a href="/topics">By Topic</a></li>
+          <li><a href="/eras">By Era</a></li>
+          <li><a href="/regions">By Region</a></li>
+          <li><a href="/map">World Map</a></li>
+          <li><a href="/random">Random Article</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>About</h3>
+        <ul style="list-style:none;margin:0;padding:0;line-height:2">
+          <li><a href="/about">About This Site</a></li>
+          <li><a href="https://en.wikipedia.org/wiki/Wikipedia:Featured_articles" target="_blank" rel="noopener">Wikipedia Featured Articles</a></li>
+          <li><a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0 License</a></li>
+          <li><a href="/sources">Sources & Attribution</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <div>
+        Content from <a href="https://en.wikipedia.org/wiki/Wikipedia:Featured_articles" target="_blank" rel="noopener">Wikipedia's Featured Articles</a>,
+        used under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>.
+        This site demonstrates <a href="https://tag1consulting.com/scolta" target="_blank" rel="noopener">Scolta</a> search technology.
+      </div>
+      <div>© {{ current_year }} Tag1 Consulting</div>
+    </div>
+  </footer>
+
+  <js-bottom-placeholder token="{{ placeholder_token }}">
+</body>
+</html>

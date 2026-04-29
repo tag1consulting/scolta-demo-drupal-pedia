@@ -1,0 +1,21 @@
+uuid: ea5ddc92-3f35-4989-aac8-dfe690c1f700
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_coordinates
+    - node.type.featured_article
+  module:
+    - geofield
+id: node.featured_article.field_coordinates
+field_name: field_coordinates
+entity_type: node
+bundle: featured_article
+label: Coordinates
+description: 'Geographic coordinates for location-based articles.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: geofield

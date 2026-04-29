@@ -1,0 +1,44 @@
+# Environment
+.env
+*.local
+
+# Composer
+vendor/
+
+# Node
+node_modules/
+
+# Drupal
+web/core/
+web/modules/contrib/
+web/themes/contrib/
+web/profiles/contrib/
+web/sites/default/settings.local.php
+web/sites/default/services.local.yml
+web/sites/default/files/php/
+web/sites/default/files/css/
+web/sites/default/files/js/
+web/sites/default/files/styles/
+
+# Keep article images (committed as part of the demo)
+!web/sites/default/files/article-images/
+
+# Keep private Scolta index
+!web/sites/default/private/
+
+# DDEV generated files
+.ddev/.ddev-docker-compose-base.yaml
+.ddev/.ddev-docker-compose-full.yaml
+.ddev/db_snapshots/
+.ddev/.homeadditions/
+.ddev/.webimageBuild/
+.ddev/.dbimageBuild/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp

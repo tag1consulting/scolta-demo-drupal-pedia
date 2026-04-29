@@ -1,0 +1,25 @@
+uuid: e3d78f83-20c1-4b4d-adb7-46d828ce0118
+langcode: en
+status: true
+dependencies:
+  module:
+    - system
+  theme:
+    - athenaeum
+_core:
+  default_config_hash: '-OAAZDw1OR_UyAEPEKX0Hu4LaZD149vW9PmMnIC-v0o'
+id: athenaeum_site_branding
+theme: athenaeum
+region: header
+weight: 0
+provider: null
+plugin: system_branding_block
+settings:
+  id: system_branding_block
+  label: 'Site branding'
+  label_display: '0'
+  provider: system
+  use_site_logo: true
+  use_site_name: true
+  use_site_slogan: true
+visibility: {  }

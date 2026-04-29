@@ -1,0 +1,9 @@
+uuid: 73293c6b-b422-4bb7-8010-5fcd13a096ce
+langcode: en
+status: true
+dependencies: {  }
+name: Topics
+vid: topics
+description: 'Subject areas mapped from Wikipedia categories'
+weight: 0
+new_revision: false

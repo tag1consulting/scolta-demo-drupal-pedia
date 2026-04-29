@@ -1,0 +1,19 @@
+uuid: 20e22edd-c196-4713-a803-d1b11e37c8b5
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_infobox_data
+    - node.type.featured_article
+id: node.featured_article.field_infobox_data
+field_name: field_infobox_data
+entity_type: node
+bundle: featured_article
+label: 'Infobox Data'
+description: 'JSON-serialized infobox key-value pairs.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

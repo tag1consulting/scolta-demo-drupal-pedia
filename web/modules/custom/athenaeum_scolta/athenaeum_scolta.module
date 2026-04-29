@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Athenaeum Scolta integration module.
+ *
+ * This module is a thin wrapper around tag1/scolta-drupal. It provides
+ * site-specific configuration for The Athenaeum demo — it does NOT
+ * reimplement any search logic. All search functionality comes from
+ * the Scolta module.
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function athenaeum_scolta_theme($existing, $type, $theme, $path): array {
+  return [
+    'athenaeum_search_results' => [
+      'variables' => [
+        'query' => '',
+        'results' => [],
+        'expansion_terms' => [],
+        'total' => 0,
+      ],
+    ],
+  ];
+}

@@ -1,0 +1,21 @@
+uuid: 6c4deb4f-86c6-49ed-bdbe-479b478132e9
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: featured_article
+label: 'Featured Articles'
+type: 'canonical_entities:node'
+pattern: '/article/[node:title]'
+selection_criteria:
+  node_type:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      featured_article: featured_article
+selection_logic: and
+weight: 0
+relationships: {  }

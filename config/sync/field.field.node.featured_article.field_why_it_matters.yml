@@ -1,0 +1,22 @@
+uuid: 72843554-4265-4b8d-8e6a-6e0188137488
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_why_it_matters
+    - node.type.featured_article
+  module:
+    - text
+id: node.featured_article.field_why_it_matters
+field_name: field_why_it_matters
+entity_type: node
+bundle: featured_article
+label: 'Why This Matters'
+description: 'AI-generated 2-3 sentence summary of significance.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats: {  }
+field_type: text_long

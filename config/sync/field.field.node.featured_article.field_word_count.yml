@@ -1,0 +1,23 @@
+uuid: 54bf6379-9f88-4a6c-9dfe-d35147f63f51
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_word_count
+    - node.type.featured_article
+id: node.featured_article.field_word_count
+field_name: field_word_count
+entity_type: node
+bundle: featured_article
+label: 'Word Count'
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

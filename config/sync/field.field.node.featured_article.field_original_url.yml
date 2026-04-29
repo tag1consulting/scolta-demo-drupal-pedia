@@ -1,0 +1,23 @@
+uuid: 42aaad45-2d15-4edd-af9b-db532f3779d7
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_original_url
+    - node.type.featured_article
+  module:
+    - link
+id: node.featured_article.field_original_url
+field_name: field_original_url
+entity_type: node
+bundle: featured_article
+label: 'Original Wikipedia Article'
+description: 'Link to the original Wikipedia article (required for CC BY-SA 4.0).'
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  title: 0
+  link_type: 16
+field_type: link

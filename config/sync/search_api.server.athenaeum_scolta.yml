@@ -1,0 +1,11 @@
+uuid: 8056bdd8-a06e-4399-b879-582277c5fd6e
+langcode: en
+status: true
+dependencies:
+  module:
+    - scolta
+id: athenaeum_scolta
+name: 'Athenaeum Scolta'
+description: 'Scolta semantic search server for The Athenaeum encyclopedia.'
+backend: scolta_pagefind
+backend_config: {  }

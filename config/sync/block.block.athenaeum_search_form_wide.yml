@@ -1,0 +1,23 @@
+uuid: c4dec0a3-ab27-47d6-a68d-77f23757067f
+langcode: en
+status: true
+dependencies:
+  module:
+    - search
+  theme:
+    - athenaeum
+_core:
+  default_config_hash: pbbed0hdqGDF-_QWVVTWRAwgDIotFuAvWH5mWUZu0fA
+id: athenaeum_search_form_wide
+theme: athenaeum
+region: header
+weight: -5
+provider: null
+plugin: search_form_block
+settings:
+  id: search_form_block
+  label: 'Search form (wide)'
+  label_display: '0'
+  provider: search
+  page_id: null
+visibility: {  }

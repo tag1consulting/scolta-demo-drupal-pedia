@@ -1,0 +1,11 @@
+uuid: 8bb218e6-8b28-465d-b920-7d7da13375c2
+langcode: en
+status: true
+dependencies: {  }
+name: 'Featured Article'
+type: featured_article
+description: 'A Wikipedia Featured Article — the highest quality entries in the encyclopedia.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: true

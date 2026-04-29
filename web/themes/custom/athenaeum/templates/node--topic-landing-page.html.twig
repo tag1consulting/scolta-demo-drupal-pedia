@@ -1,0 +1,23 @@
+{%
+  set classes = [
+    'node',
+    'node--type-topic-landing-page',
+  ]
+%}
+<article{{ attributes.addClass(classes) }}>
+  <div class="page-wrapper">
+
+    <header class="article-header">
+      <div class="article-header__eyebrow" style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-burgundy);margin-bottom:0.5rem">Topic</div>
+      <h1 class="article-header__title">{{ node.label }}</h1>
+    </header>
+
+    {% if content.body %}
+      <div class="article-lead">{{ content.body }}</div>
+    {% endif %}
+
+    {# Article listing — populated by Views block placed via block layout in Session 4 #}
+    {{ page.content }}
+
+  </div>
+</article>

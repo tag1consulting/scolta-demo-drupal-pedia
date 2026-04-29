@@ -1,0 +1,10 @@
+name: 'Athenaeum Import'
+type: module
+description: 'Drush commands for importing Wikipedia Featured Articles into The Athenaeum.'
+core_version_requirement: ^11
+package: 'The Athenaeum'
+dependencies:
+  - drupal:node
+  - drupal:taxonomy
+  - drupal:file
+  - drupal:image

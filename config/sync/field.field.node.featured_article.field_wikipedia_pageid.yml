@@ -1,0 +1,23 @@
+uuid: aaae90c9-a3e6-4450-8985-1ae08708dcf4
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_wikipedia_pageid
+    - node.type.featured_article
+id: node.featured_article.field_wikipedia_pageid
+field_name: field_wikipedia_pageid
+entity_type: node
+bundle: featured_article
+label: 'Wikipedia Page ID'
+description: 'Wikipedia page ID for deduplication and resume support.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer
