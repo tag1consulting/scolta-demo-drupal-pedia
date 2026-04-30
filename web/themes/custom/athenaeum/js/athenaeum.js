@@ -21,7 +21,7 @@
       once('example-query', '[data-example-query]', context).forEach(function (link) {
         link.addEventListener('click', function (e) {
           e.preventDefault();
-          const input = document.querySelector('.hero-search__input, input[name="keys"]');
+          const input = document.querySelector('.hero-search__input, input[name="q"]');
           if (input) {
             input.value = this.dataset.exampleQuery;
             input.focus();

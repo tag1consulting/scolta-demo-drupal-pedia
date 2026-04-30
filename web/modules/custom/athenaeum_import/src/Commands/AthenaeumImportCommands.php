@@ -190,9 +190,10 @@ class AthenaeumImportCommands extends DrushCommands {
       $nodes = $nodeStorage->loadMultiple($chunk);
 
       // Separate nodes that need processing from those to skip.
+      // Era and region are already 100% complete; only skip if topics are set.
       $toProcess = [];
       foreach ($nodes as $node) {
-        if (!$force && (!$node->get('field_topics')->isEmpty() || !$node->get('field_era')->isEmpty() || !$node->get('field_region')->isEmpty())) {
+        if (!$force && !$node->get('field_topics')->isEmpty()) {
           $skipped++;
         }
         else {
@@ -210,6 +211,10 @@ class AthenaeumImportCommands extends DrushCommands {
           'format' => 'json',
         ];
         $data = $this->apiRequest($params);
+        if (!$data) {
+          usleep(2000 * 1000);
+          $data = $this->apiRequest($params);
+        }
         $pages = $data['query']['pages'] ?? [];
 
         foreach ($pages as $page) {
@@ -261,44 +266,64 @@ class AthenaeumImportCommands extends DrushCommands {
 
     $nodeStorage = $this->entityTypeManager->getStorage('node');
 
+    // Only load articles that do not yet have an image attached.
     $nids = \Drupal::entityQuery('node')
       ->accessCheck(FALSE)
       ->condition('type', 'featured_article')
+      ->notExists('field_image')
       ->execute();
 
     $total = count($nids);
-    $count = 0;
     $attached = 0;
+
+    $this->output()->writeln(sprintf('  %d articles need images.', $total));
+    flush();
 
     foreach (array_chunk($nids, 50) as $chunk) {
       $nodes = $nodeStorage->loadMultiple($chunk);
+
+      // Batch-fetch thumbnail info for all 50 articles in one API call.
+      $titleMap = [];
       foreach ($nodes as $node) {
-        $count++;
+        $titleMap[$node->label()] = $node;
+      }
+      $params = [
+        'action' => 'query',
+        'titles' => implode('|', array_keys($titleMap)),
+        'prop' => 'pageimages',
+        'pithumbsize' => '1200',
+        'piprop' => 'thumbnail|name',
+        'format' => 'json',
+      ];
+      $data = $this->apiRequest($params);
+      $pages = $data['query']['pages'] ?? [];
 
-        if (!$node->get('field_image')->isEmpty()) {
-          continue;
-        }
+      // Download and attach images for pages that have thumbnails.
+      foreach ($pages as $page) {
+        $thumbnail = $page['thumbnail'] ?? NULL;
+        if (!$thumbnail) continue;
 
-        if ($count % 100 === 0) {
-          $this->output()->writeln(sprintf('  [%d/%d] processed, %d images attached', $count, $total, $attached));
-        }
+        $pageTitle = $page['title'] ?? '';
+        $node = $titleMap[$pageTitle] ?? NULL;
+        if (!$node) continue;
 
-        $title = $node->label();
-        $imageData = $this->fetchLeadImage($title);
-        if (!$imageData) continue;
-
-        $fileEntity = $this->downloadImage($imageData['url'], $title);
+        $fileEntity = $this->downloadImage($thumbnail['source'], $pageTitle);
         if (!$fileEntity) continue;
 
-        $node->set('field_image', ['target_id' => $fileEntity->id(), 'alt' => $title]);
-        $credit = trim(($imageData['credit'] ?? '') . ' · ' . ($imageData['license'] ?? ''), ' · ');
-        $node->set('field_image_credit', $credit);
+        $node->set('field_image', ['target_id' => $fileEntity->id(), 'alt' => $pageTitle]);
+        $node->set('field_image_credit', $page['pageimage'] ?? '');
         $node->save();
         $attached++;
-
-        usleep(self::RATE_LIMIT_DELAY_MS * 1000);
       }
+
       $nodeStorage->resetCache($chunk);
+
+      if ($attached % 200 === 0 && $attached > 0) {
+        $this->output()->writeln(sprintf('  attached: %d / ~%d', $attached, $total));
+        flush();
+      }
+
+      usleep(self::RATE_LIMIT_DELAY_MS * 1000);
     }
 
     $this->output()->writeln(sprintf('<info>Done. Attached images to %d articles.</info>', $attached));
@@ -471,34 +496,37 @@ class AthenaeumImportCommands extends DrushCommands {
     $this->output()->writeln('<info>Running AI enrichment pass...</info>');
     $nodeStorage = $this->entityTypeManager->getStorage('node');
 
+    // Only load articles that don't yet have a "Why This Matters" blurb and have a lead.
     $nids = \Drupal::entityQuery('node')
       ->accessCheck(FALSE)
       ->condition('type', 'featured_article')
+      ->notExists('field_why_it_matters')
+      ->exists('field_lead')
       ->execute();
 
     $total = count($nids);
-    $count = 0;
     $enriched = 0;
+
+    $this->output()->writeln(sprintf('  %d articles to enrich.', $total));
+    flush();
 
     foreach (array_chunk($nids, 50) as $chunk) {
       $nodes = $nodeStorage->loadMultiple($chunk);
       foreach ($nodes as $node) {
-        $count++;
-        if (!$node->get('field_why_it_matters')->isEmpty()) continue;
-
         $title = $node->label();
         $lead = $node->get('field_lead')->value ?? '';
         if (empty($lead)) continue;
-
-        if ($count % 50 === 0) {
-          $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
-        }
 
         $blurb = $this->generateWhyItMatters($title, $lead, $apiKey);
         if ($blurb) {
           $node->set('field_why_it_matters', ['value' => $blurb, 'format' => 'plain_text']);
           $node->save();
           $enriched++;
+
+          if ($enriched % 50 === 0) {
+            $this->output()->writeln(sprintf('  [%d/%d enriched] %s', $enriched, $total, $title));
+            flush();
+          }
         }
 
         usleep(500000);

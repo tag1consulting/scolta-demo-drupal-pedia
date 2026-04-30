@@ -8,6 +8,7 @@ global:
   dependencies:
     - core/drupal
     - core/jquery
+    - core/once
 
 leaflet:
   version: 1.x
