@@ -880,6 +880,9 @@ if (getenv('IS_DDEV_PROJECT') == 'true' && file_exists(__DIR__ . '/settings.ddev
   include __DIR__ . '/settings.ddev.php';
 }
 
+// Private file system for Scolta Pagefind build artifacts.
+$settings['file_private_path'] = '/var/www/html/web/sites/default/private';
+
 /**
  * Load local development override configuration, if available.
  *
@@ -894,11 +897,9 @@ if (getenv('IS_DDEV_PROJECT') == 'true' && file_exists(__DIR__ . '/settings.ddev
  * Keep this code block at the end of this file to take full effect.
  */
 #
-# if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
-#   include $app_root . '/' . $site_path . '/settings.local.php';
-# }
+if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
+  include $app_root . '/' . $site_path . '/settings.local.php';
+}
 
 // The Athenaeum: Use version-controlled config sync directory.
 $settings['config_sync_directory'] = '../config/sync';
-// Private file system for Scolta Pagefind build artifacts.
-$settings['file_private_path'] = '/var/www/html/web/sites/default/private';
