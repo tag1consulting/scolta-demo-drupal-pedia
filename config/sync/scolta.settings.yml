@@ -1,7 +1,5 @@
-_core:
-  default_config_hash: vpc2ijOkSECIRv98eV4kPcOdOXZWmaYBWuSOSd5_8iE
 ai_provider: anthropic
-ai_model: claude-sonnet-4-5-20250929
+ai_model: claude-haiku-4-5-20251001
 ai_expansion_model: ''
 ai_base_url: ''
 ai_expand_query: true
@@ -9,27 +7,27 @@ ai_summarize: true
 ai_languages:
   - en
 max_follow_ups: 3
-site_name: ''
-site_description: website
+site_name: 'The Athenaeum'
+site_description: "Wikipedia's ~6,900 Featured Articles — the highest-quality encyclopedia entries spanning all domains of human knowledge. Search to discover unexpected connections across science, history, art, nature, and more."
 scoring:
-  title_match_boost: 1.0
+  title_match_boost: 2.0
   title_all_terms_multiplier: 1.5
-  content_match_boost: 0.4
-  recency_boost_max: 0.5
-  recency_half_life_days: 365
-  recency_penalty_after_days: 1825
-  recency_max_penalty: 0.3
-  expand_primary_weight: 0.5
+  content_match_boost: 0.5
+  recency_boost_max: 0.1
+  recency_half_life_days: 3650
+  recency_penalty_after_days: 36500
+  recency_max_penalty: 0.05
+  expand_primary_weight: 0.6
   language: en
   custom_stop_words: {  }
   recency_strategy: exponential
   recency_curve: {  }
 display:
-  excerpt_length: 300
-  results_per_page: 10
-  max_pagefind_results: 50
+  excerpt_length: 350
+  results_per_page: 12
+  max_pagefind_results: 60
   ai_summary_top_n: 10
-  ai_summary_max_chars: 4000
+  ai_summary_max_chars: 5000
 cache_ttl: 2592000
 prompt_expand_query: ''
 prompt_summarize: ''
@@ -43,5 +41,5 @@ pagefind:
   build_dir: 'private://scolta-build'
   output_dir: 'public://scolta-pagefind'
   binary: pagefind
-  auto_rebuild: true
+  auto_rebuild: false
   view_mode: search_index

@@ -111,11 +111,28 @@
         </div>
       </section>
 
-      {# Content placeholder - will be replaced by Views in Session 4 #}
-      <section style="margin-top:3rem;background:var(--color-parchment-dark);border:1px dashed var(--color-border);border-radius:6px;padding:2rem;text-align:center;color:#999">
-        <p style="font-size:1.1rem;margin:0">📚 Article listings load here after content import (Session 2)</p>
-        <p style="font-size:0.85rem;margin:0.5rem 0 0">Run <code>drush athenaeum:import-articles</code> to populate the encyclopedia</p>
-      </section>
+      {# Today's Featured Article (random) #}
+      {% if view_random_article %}
+        <section style="margin-top:2rem">
+          <h2 style="font-family:var(--font-serif);color:var(--color-navy);border-bottom:2px solid var(--color-border);padding-bottom:0.5rem">
+            ⭐ Today's Featured Article
+          </h2>
+          <div class="article-grid">{{ view_random_article }}</div>
+        </section>
+      {% endif %}
+
+      {# Recently added #}
+      {% if view_recent_articles %}
+        <section style="margin-top:3rem">
+          <h2 style="font-family:var(--font-serif);color:var(--color-navy);border-bottom:2px solid var(--color-border);padding-bottom:0.5rem">
+            Recently Added
+          </h2>
+          <div class="article-grid">{{ view_recent_articles }}</div>
+          <div style="text-align:center;margin-top:1.5rem">
+            <a href="/articles" style="display:inline-block;background:var(--color-navy);color:#fff;padding:0.6rem 1.5rem;border-radius:4px;font-weight:600;text-decoration:none">Browse all 6,900+ articles →</a>
+          </div>
+        </section>
+      {% endif %}
 
     </div>{# /page-wrapper #}
   </main>

@@ -1,0 +1,20 @@
+uuid: 5d6a879c-203c-4d64-9475-4366bbd61523
+langcode: en
+status: true
+dependencies:
+  module:
+    - scolta
+  theme:
+    - athenaeum
+id: athenaeum_scolta_search
+theme: athenaeum
+region: content
+weight: -20
+provider: null
+plugin: scolta_search
+settings:
+  id: scolta_search
+  label: 'Scolta Search'
+  label_display: '0'
+  provider: scolta
+visibility: {  }

@@ -1,0 +1,107 @@
+uuid: 9ac3e673-e86d-4382-8468-648a8285ca08
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.node.teaser
+    - node.type.topic_landing_page
+  module:
+    - node
+id: browse_by_topic
+label: 'Browse by Topic'
+module: views
+description: 'Articles grouped by topic taxonomy.'
+tag: athenaeum
+base_table: node_field_data
+base_field: nid
+display:
+  default:
+    id: default
+    display_title: Default
+    display_plugin: default
+    position: 0
+    display_options:
+      title: 'Browse by Topic'
+      fields: {  }
+      pager:
+        type: full
+        options:
+          offset: 0
+          items_per_page: 20
+          total_pages: null
+          id: 0
+          expose:
+            items_per_page: false
+      exposed_form:
+        type: basic
+        options: {  }
+      access:
+        type: none
+        options: {  }
+      cache:
+        type: tag
+        options: {  }
+      sorts:
+        title:
+          id: title
+          table: node_field_data
+          field: title
+          plugin_id: standard
+          order: ASC
+          exposed: false
+      filters:
+        status:
+          id: status
+          table: node_field_data
+          field: status
+          plugin_id: boolean
+          value: '1'
+        type:
+          id: type
+          table: node_field_data
+          field: type
+          plugin_id: bundle
+          value:
+            topic_landing_page: topic_landing_page
+      style:
+        type: default
+        options:
+          row_class: topic-grid__item
+          default_row_class: false
+      row:
+        type: 'entity:node'
+        options:
+          relationship: none
+          view_mode: teaser
+      query:
+        type: views_query
+        options: {  }
+      css_class: topic-grid
+      use_more: false
+      link_display: page_1
+      display_extenders: {  }
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - url.query_args
+        - 'user.node_grants:view'
+      tags: {  }
+  page_1:
+    id: page_1
+    display_title: 'Browse by Topic'
+    display_plugin: page
+    position: 1
+    display_options:
+      title: 'Browse by Topic'
+      defaults:
+        title: false
+      display_extenders: {  }
+      path: topics
+    cache_metadata:
+      max-age: -1
+      contexts:
+        - 'languages:language_interface'
+        - url.query_args
+        - 'user.node_grants:view'
+      tags: {  }

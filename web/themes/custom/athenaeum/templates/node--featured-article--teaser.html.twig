@@ -21,10 +21,13 @@
       <a href="{{ url }}" rel="bookmark">{{ label }}</a>
     </h3>
 
-    {% if node.field_lead.value %}
-      <div class="article-card__lead">{{ node.field_lead.value|striptags|truncate(160, true, '…') }}</div>
-    {% elseif content.body %}
-      <div class="article-card__lead">{{ content.body|render|striptags|truncate(160, true, '…') }}</div>
+    {% set raw_lead = (node.field_lead.value is not iterable ? node.field_lead.value : '')|default('')|striptags %}
+    {# Skip leads that are CSS/infobox content (Wikipedia formatting artifacts). #}
+    {% if raw_lead and raw_lead[:15] != '.mw-parser-outp' and raw_lead[:3] != '@me' %}
+      <div class="article-card__lead">{{ raw_lead|length > 160 ? raw_lead[:160] ~ '…' : raw_lead }}</div>
+    {% elseif node.body.value %}
+      {% set body_text = (node.body.value is not iterable ? node.body.value : '')|default('')|striptags %}
+      <div class="article-card__lead">{{ body_text|length > 160 ? body_text[:160] ~ '…' : body_text }}</div>
     {% endif %}
 
     <div class="article-card__meta">

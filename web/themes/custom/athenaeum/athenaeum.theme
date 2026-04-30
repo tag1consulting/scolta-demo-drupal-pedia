@@ -23,12 +23,20 @@ function athenaeum_preprocess_node(&$variables) {
         if ($term = $topic_ref->entity) {
           $topics[] = [
             'name' => $term->getName(),
-            'url' => \Drupal\Core\Url::fromRoute('entity.node.canonical', [])
-              ->toString(),
+            'url' => '/topic/' . strtolower($term->getName()),
           ];
         }
       }
       $variables['topic_list'] = $topics;
+    }
+  }
+
+  if ($node instanceof NodeInterface && $node->bundle() === 'topic_landing_page') {
+    if ($node->hasField('field_topic') && !$node->get('field_topic')->isEmpty()) {
+      $term = $node->get('field_topic')->entity;
+      if ($term && \Drupal::moduleHandler()->moduleExists('views')) {
+        $variables['topic_articles'] = views_embed_view('articles_by_topic', 'block_1', $term->id());
+      }
     }
   }
 }
@@ -39,4 +47,11 @@ function athenaeum_preprocess_node(&$variables) {
 function athenaeum_preprocess_page(&$variables) {
   $variables['site_name'] = \Drupal::config('system.site')->get('name');
   $variables['current_year'] = date('Y');
+
+  if (\Drupal::service('path.matcher')->isFrontPage()) {
+    if (\Drupal::moduleHandler()->moduleExists('views')) {
+      $variables['view_random_article'] = views_embed_view('random_article', 'block_1');
+      $variables['view_recent_articles'] = views_embed_view('recent_articles', 'block_1');
+    }
+  }
 }

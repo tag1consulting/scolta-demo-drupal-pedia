@@ -64,11 +64,10 @@
         </div>
       {% endif %}
 
-      {# Lead / summary #}
-      {% if node.field_lead.value %}
-        <div class="article-lead">
-          {{ node.field_lead.value }}
-        </div>
+      {# Lead / summary — skip if it's Wikipedia CSS rather than real text #}
+      {% set lead_raw = (node.field_lead.value is not iterable ? node.field_lead.value : '')|default('')|striptags %}
+      {% if lead_raw and lead_raw[:15] != '.mw-parser-outp' and lead_raw[:3] != '@me' %}
+        <div class="article-lead">{{ lead_raw }}</div>
       {% endif %}
 
       {# "Why This Matters" enrichment blurb #}

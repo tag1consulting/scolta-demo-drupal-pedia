@@ -135,52 +135,74 @@ class AthenaeumImportCommands extends DrushCommands {
    * Maps Wikipedia categories to Drupal taxonomy and assigns era/region.
    */
   #[CLI\Command(name: 'athenaeum:import-categories', aliases: ['ath-cats'])]
+  #[CLI\Option(name: 'force', description: 'Re-tag all articles, ignoring existing taxonomy')]
   #[CLI\Usage(name: 'drush athenaeum:import-categories', description: 'Map Wikipedia categories to Drupal taxonomy')]
-  public function importCategories(): void {
+  #[CLI\Usage(name: 'drush athenaeum:import-categories --force', description: 'Re-run for all articles')]
+  public function importCategories(array $options = ['force' => FALSE]): void {
+    $force = (bool) $options['force'];
     $this->output()->writeln('<info>Importing categories for all featured articles...</info>');
+    if ($force) {
+      $this->output()->writeln('<comment>--force: re-tagging all articles.</comment>');
+    }
 
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-    $nodes = $nodeStorage->loadByProperties(['type' => 'featured_article']);
-    $total = count($nodes);
+
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
     $count = 0;
+    $skipped = 0;
 
-    foreach ($nodes as $node) {
-      $count++;
-      $title = $node->label();
-      if ($count % 100 === 0) {
-        $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+    foreach (array_chunk($nids, self::BATCH_SIZE) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        $title = $node->label();
+        if ($count % 100 === 0) {
+          $this->output()->writeln(sprintf('  [%d/%d] %s (skipped: %d)', $count, $total, $title, $skipped));
+        }
+
+        // Skip articles that already have taxonomy assigned (unless --force).
+        if (!$force && (!$node->get('field_topics')->isEmpty() || !$node->get('field_era')->isEmpty() || !$node->get('field_region')->isEmpty())) {
+          $skipped++;
+          continue;
+        }
+
+        $params = [
+          'action' => 'query',
+          'titles' => $title,
+          'prop' => 'categories',
+          'cllimit' => '100',
+          'format' => 'json',
+        ];
+        $data = $this->apiRequest($params);
+        if (!$data) continue;
+
+        $pages = $data['query']['pages'] ?? [];
+        $page = reset($pages);
+        $categories = array_map(fn($c) => str_replace('Category:', '', $c['title']), $page['categories'] ?? []);
+
+        $topicTerms = $this->mapCategoriesToTopics($categories);
+        $eraTermId = $this->mapCategoriesToEra($categories);
+        $regionTermId = $this->mapCategoriesToRegion($categories);
+
+        if (!empty($topicTerms)) {
+          $node->set('field_topics', array_map(fn($id) => ['target_id' => $id], $topicTerms));
+        }
+        if ($eraTermId) {
+          $node->set('field_era', ['target_id' => $eraTermId]);
+        }
+        if ($regionTermId) {
+          $node->set('field_region', ['target_id' => $regionTermId]);
+        }
+        $node->save();
+
+        usleep(self::RATE_LIMIT_DELAY_MS * 1000);
       }
-
-      $params = [
-        'action' => 'query',
-        'titles' => $title,
-        'prop' => 'categories',
-        'cllimit' => '100',
-        'format' => 'json',
-      ];
-      $data = $this->apiRequest($params);
-      if (!$data) continue;
-
-      $pages = $data['query']['pages'] ?? [];
-      $page = reset($pages);
-      $categories = array_map(fn($c) => str_replace('Category:', '', $c['title']), $page['categories'] ?? []);
-
-      $topicTerms = $this->mapCategoriesToTopics($categories);
-      $eraTermId = $this->mapCategoriesToEra($categories);
-      $regionTermId = $this->mapCategoriesToRegion($categories);
-
-      if (!empty($topicTerms)) {
-        $node->set('field_topics', array_map(fn($id) => ['target_id' => $id], $topicTerms));
-      }
-      if ($eraTermId) {
-        $node->set('field_era', ['target_id' => $eraTermId]);
-      }
-      if ($regionTermId) {
-        $node->set('field_region', ['target_id' => $regionTermId]);
-      }
-      $node->save();
-
-      usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+      $nodeStorage->resetCache($chunk);
     }
 
     $this->output()->writeln('<info>Category import complete.</info>');
@@ -195,39 +217,98 @@ class AthenaeumImportCommands extends DrushCommands {
     $this->output()->writeln('<info>Importing lead images from Wikimedia Commons...</info>');
 
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-    $nodes = $nodeStorage->loadByProperties(['type' => 'featured_article']);
-    $total = count($nodes);
+
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
     $count = 0;
     $attached = 0;
 
-    foreach ($nodes as $node) {
-      $count++;
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
 
-      if (!$node->get('field_image')->isEmpty()) {
-        continue;
+        if (!$node->get('field_image')->isEmpty()) {
+          continue;
+        }
+
+        if ($count % 100 === 0) {
+          $this->output()->writeln(sprintf('  [%d/%d] processed, %d images attached', $count, $total, $attached));
+        }
+
+        $title = $node->label();
+        $imageData = $this->fetchLeadImage($title);
+        if (!$imageData) continue;
+
+        $fileEntity = $this->downloadImage($imageData['url'], $title);
+        if (!$fileEntity) continue;
+
+        $node->set('field_image', ['target_id' => $fileEntity->id(), 'alt' => $title]);
+        $credit = trim(($imageData['credit'] ?? '') . ' · ' . ($imageData['license'] ?? ''), ' · ');
+        $node->set('field_image_credit', $credit);
+        $node->save();
+        $attached++;
+
+        usleep(self::RATE_LIMIT_DELAY_MS * 1000);
       }
-
-      if ($count % 100 === 0) {
-        $this->output()->writeln(sprintf('  [%d/%d] processed, %d images attached', $count, $total, $attached));
-      }
-
-      $title = $node->label();
-      $imageData = $this->fetchLeadImage($title);
-      if (!$imageData) continue;
-
-      $fileEntity = $this->downloadImage($imageData['url'], $title);
-      if (!$fileEntity) continue;
-
-      $node->set('field_image', ['target_id' => $fileEntity->id(), 'alt' => $title]);
-      $credit = trim(($imageData['credit'] ?? '') . ' · ' . ($imageData['license'] ?? ''), ' · ');
-      $node->set('field_image_credit', $credit);
-      $node->save();
-      $attached++;
-
-      usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+      $nodeStorage->resetCache($chunk);
     }
 
     $this->output()->writeln(sprintf('<info>Done. Attached images to %d articles.</info>', $attached));
+  }
+
+  /**
+   * Back-fills body HTML for articles imported before the body field was added.
+   */
+  #[CLI\Command(name: 'athenaeum:update-bodies', aliases: ['ath-bodies'])]
+  #[CLI\Usage(name: 'drush athenaeum:update-bodies', description: 'Fetch and save missing article body HTML')]
+  public function updateBodies(): void {
+    $this->output()->writeln('<info>Back-filling article body HTML...</info>');
+
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+
+    // Query only NIDs to avoid loading all nodes into memory at once.
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
+    $count = 0;
+    $updated = 0;
+
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+
+        if (!$node->get('body')->isEmpty()) {
+          continue;
+        }
+
+        $title = $node->label();
+        $pageid = $node->get('field_wikipedia_pageid')->value;
+        $articleData = $this->fetchArticle($title, (int) $pageid);
+        if (!$articleData) continue;
+
+        $node->set('body', ['value' => $articleData['html'], 'format' => 'full_html']);
+        if ($node->get('field_lead')->isEmpty()) {
+          $node->set('field_lead', ['value' => $articleData['lead'], 'format' => 'plain_text']);
+        }
+        $node->save();
+        $updated++;
+
+        usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+      }
+      $nodeStorage->resetCache();
+      $this->output()->writeln(sprintf('  [%d/%d] updated: %d', $count, $total, $updated));
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. Updated body for %d articles.</info>', $updated));
   }
 
   /**
@@ -238,37 +319,53 @@ class AthenaeumImportCommands extends DrushCommands {
   public function crossReference(): void {
     $this->output()->writeln('<info>Building cross-references from "See also" sections...</info>');
 
+    $db = \Drupal::database();
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-    $nodes = $nodeStorage->loadByProperties(['type' => 'featured_article']);
-    $total = count($nodes);
+
+    // Build title→NID map from the database without loading full node objects.
+    $titleMap = $db->select('node_field_data', 'n')
+      ->fields('n', ['nid', 'title'])
+      ->condition('n.type', 'featured_article')
+      ->execute()
+      ->fetchAllKeyed(1, 0);
+    $titleMap = array_combine(
+      array_map('strtolower', array_keys($titleMap)),
+      array_values($titleMap)
+    );
+
+    $nids = array_values($titleMap);
+    $total = count($nids);
     $count = 0;
     $linked = 0;
 
-    $titleMap = [];
-    foreach ($nodes as $node) {
-      $titleMap[strtolower($node->label())] = $node->id();
-    }
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        $body = $node->get('body')->value ?? '';
+        if (empty($body)) continue;
 
-    foreach ($nodes as $node) {
-      $count++;
-      $body = $node->get('body')->value ?? '';
-      if (empty($body)) continue;
+        $seeAlso = $this->extractSeeAlso($body);
+        if (empty($seeAlso)) continue;
 
-      $seeAlso = $this->extractSeeAlso($body);
-      if (empty($seeAlso)) continue;
+        $refs = [];
+        foreach ($seeAlso as $linkedTitle) {
+          $nid = $titleMap[strtolower($linkedTitle)] ?? NULL;
+          if ($nid && $nid !== $node->id()) {
+            $refs[] = ['target_id' => $nid];
+          }
+        }
 
-      $refs = [];
-      foreach ($seeAlso as $linkedTitle) {
-        $nid = $titleMap[strtolower($linkedTitle)] ?? NULL;
-        if ($nid && $nid !== $node->id()) {
-          $refs[] = ['target_id' => $nid];
+        if (!empty($refs)) {
+          $node->set('field_related_articles', $refs);
+          $node->save();
+          $linked++;
         }
       }
+      $nodeStorage->resetCache($chunk);
 
-      if (!empty($refs)) {
-        $node->set('field_related_articles', $refs);
-        $node->save();
-        $linked++;
+      if ($count % 500 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] linked: %d', $count, $total, $linked));
       }
     }
 
@@ -322,39 +419,48 @@ class AthenaeumImportCommands extends DrushCommands {
   #[CLI\Option(name: 'batch-size', description: 'Articles per batch')]
   #[CLI\Usage(name: 'drush athenaeum:enrich', description: 'Generate AI "Why This Matters" blurbs (requires ANTHROPIC_API_KEY)')]
   public function enrich(array $options = ['batch-size' => 100]): void {
-    $apiKey = getenv('ANTHROPIC_API_KEY') ?: getenv('SCOLTA_ANTHROPIC_API_KEY');
+    $apiKey = getenv('ANTHROPIC_API_KEY') ?: getenv('SCOLTA_ANTHROPIC_API_KEY') ?: getenv('SCOLTA_API_KEY');
     if (!$apiKey) {
-      $this->io()->error('ANTHROPIC_API_KEY not set. Required for AI enrichment.');
+      $this->io()->error('ANTHROPIC_API_KEY or SCOLTA_API_KEY not set. Required for AI enrichment.');
       return;
     }
 
     $this->output()->writeln('<info>Running AI enrichment pass...</info>');
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-    $nodes = $nodeStorage->loadByProperties(['type' => 'featured_article']);
-    $total = count($nodes);
+
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
     $count = 0;
     $enriched = 0;
 
-    foreach ($nodes as $node) {
-      $count++;
-      if (!$node->get('field_why_it_matters')->isEmpty()) continue;
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        if (!$node->get('field_why_it_matters')->isEmpty()) continue;
 
-      $title = $node->label();
-      $lead = $node->get('field_lead')->value ?? '';
-      if (empty($lead)) continue;
+        $title = $node->label();
+        $lead = $node->get('field_lead')->value ?? '';
+        if (empty($lead)) continue;
 
-      if ($count % 50 === 0) {
-        $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+        if ($count % 50 === 0) {
+          $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+        }
+
+        $blurb = $this->generateWhyItMatters($title, $lead, $apiKey);
+        if ($blurb) {
+          $node->set('field_why_it_matters', ['value' => $blurb, 'format' => 'plain_text']);
+          $node->save();
+          $enriched++;
+        }
+
+        usleep(500000);
       }
-
-      $blurb = $this->generateWhyItMatters($title, $lead, $apiKey);
-      if ($blurb) {
-        $node->set('field_why_it_matters', ['value' => $blurb, 'format' => 'plain_text']);
-        $node->save();
-        $enriched++;
-      }
-
-      usleep(500000);
+      $nodeStorage->resetCache($chunk);
     }
 
     $this->output()->writeln(sprintf('<info>Done. Enriched %d articles.</info>', $enriched));
@@ -417,8 +523,28 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   protected function extractLead(string $html): string {
-    if (preg_match_all('/<p[^>]*>(.{80,}?)<\/p>/s', $html, $m)) {
-      return trim(strip_tags($m[1][0]));
+    // Strip infoboxes, tables, navboxes, and style tags before extracting lead.
+    $stripped = preg_replace('/<style[^>]*>.*?<\/style>/si', '', $html);
+    $stripped = preg_replace('/<table[^>]*>.*?<\/table>/si', '', $stripped);
+    $stripped = preg_replace('/<div[^>]*class="[^"]*(?:infobox|navbox|hatnote|thumb)[^"]*"[^>]*>.*?<\/div>/si', '', $stripped);
+
+    // Find the first paragraph with substantial text (>60 chars after stripping tags).
+    if (preg_match_all('/<p[^>]*>(.*?)<\/p>/si', $stripped, $m)) {
+      foreach ($m[1] as $candidate) {
+        $text = trim(strip_tags($candidate));
+        if (strlen($text) >= 60) {
+          return $text;
+        }
+      }
+    }
+    // Fallback to original html.
+    if (preg_match_all('/<p[^>]*>(.*?)<\/p>/si', $html, $m)) {
+      foreach ($m[1] as $candidate) {
+        $text = trim(strip_tags($candidate));
+        if (strlen($text) >= 60) {
+          return $text;
+        }
+      }
     }
     return '';
   }
@@ -493,29 +619,67 @@ class AthenaeumImportCommands extends DrushCommands {
 
   protected function mapCategoriesToTopics(array $categories): array {
     $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+
+    // Keyword-to-topic map. Keys are matched as whole words against the
+    // lower-cased category name after stripping the "Category:" prefix and
+    // Wikipedia maintenance-category patterns.
     $keywordMap = [
       'science' => 'Science', 'physics' => 'Science', 'chemistry' => 'Science',
-      'biology' => 'Science', 'astronomy' => 'Science', 'mathematics' => 'Mathematics',
-      'history' => 'History', 'war' => 'Military', 'battle' => 'Military',
-      'biography' => 'Biography', 'born' => 'Biography',
-      'art' => 'Arts', 'music' => 'Arts', 'literature' => 'Arts', 'film' => 'Arts',
-      'architecture' => 'Arts',
+      'biology' => 'Science', 'astronomy' => 'Science', 'geology' => 'Science',
+      'mathematics' => 'Mathematics', 'mathematical' => 'Mathematics',
+      'history' => 'History', 'historical' => 'History',
+      'war' => 'Military', 'battle' => 'Military', 'military' => 'Military',
+      'naval' => 'Military', 'warfare' => 'Military', 'army' => 'Military',
+      'biography' => 'Biography',
+      'painting' => 'Arts', 'sculpture' => 'Arts', 'visual arts' => 'Arts',
+      'music' => 'Arts', 'musician' => 'Arts', 'composer' => 'Arts',
+      'literature' => 'Arts', 'novelist' => 'Arts', 'poetry' => 'Arts',
+      'cinema' => 'Arts', 'films' => 'Arts', 'theatre' => 'Arts',
+      'architecture' => 'Arts', 'artwork' => 'Arts', 'artistic' => 'Arts',
       'technology' => 'Technology', 'engineering' => 'Engineering',
       'computing' => 'Technology', 'software' => 'Technology',
-      'animal' => 'Nature', 'species' => 'Nature', 'plant' => 'Nature', 'ecology' => 'Nature',
-      'geography' => 'Geography', 'country' => 'Geography', 'city' => 'Geography',
+      'electronics' => 'Technology', 'telecommunications' => 'Technology',
+      'animal' => 'Nature', 'species' => 'Nature', 'plant' => 'Nature',
+      'ecology' => 'Nature', 'wildlife' => 'Nature', 'insect' => 'Nature',
+      'bird' => 'Nature', 'fish' => 'Nature', 'mammal' => 'Nature',
+      'geography' => 'Geography', 'country' => 'Geography', 'cities' => 'Geography',
+      'island' => 'Geography', 'river' => 'Geography', 'mountain' => 'Geography',
       'sports' => 'Sports', 'sport' => 'Sports', 'olympic' => 'Sports',
-      'religion' => 'Religion', 'philosophy' => 'Philosophy',
+      'football' => 'Sports', 'cricket' => 'Sports', 'tennis' => 'Sports',
+      'religion' => 'Religion', 'christianity' => 'Religion', 'islam' => 'Religion',
+      'buddhism' => 'Religion', 'hinduism' => 'Religion', 'judaism' => 'Religion',
+      'philosophy' => 'Philosophy', 'philosopher' => 'Philosophy',
       'society' => 'Society', 'politics' => 'Society', 'economics' => 'Society',
+      'law' => 'Society', 'government' => 'Society',
       'medicine' => 'Medicine', 'disease' => 'Medicine', 'health' => 'Medicine',
-      'military' => 'Military', 'naval' => 'Military',
+      'surgery' => 'Medicine', 'anatomy' => 'Medicine', 'pharmacology' => 'Medicine',
+    ];
+
+    // Skip Wikipedia maintenance categories that contain these patterns.
+    $skipPatterns = [
+      'articles with', 'wikipedia articles', 'articles needing', 'pages using',
+      'cs1 ', 'webarchive', 'all articles', 'good articles', 'featured articles',
+      'living people', 'died ', 'births', 'deaths', 'orphaned articles',
+      'short description', 'use dmy', 'use mdy', 'infobox',
     ];
 
     $matchedTopics = [];
     foreach ($categories as $cat) {
       $catLower = strtolower($cat);
+
+      // Skip maintenance categories.
+      $skip = FALSE;
+      foreach ($skipPatterns as $pattern) {
+        if (str_contains($catLower, $pattern)) {
+          $skip = TRUE;
+          break;
+        }
+      }
+      if ($skip) continue;
+
       foreach ($keywordMap as $keyword => $topicName) {
-        if (str_contains($catLower, $keyword)) {
+        // Use word-boundary matching: keyword must appear as a complete word.
+        if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/', $catLower)) {
           $matchedTopics[$topicName] = TRUE;
         }
       }
@@ -584,10 +748,14 @@ class AthenaeumImportCommands extends DrushCommands {
 
   protected function extractSeeAlso(string $html): array {
     $titles = [];
-    if (preg_match('/<h2[^>]*>See also<\/h2>(.*?)(?:<h2|$)/si', $html, $section)) {
-      preg_match_all('/data-wiki-link="([^"]+)"/i', $section[1], $matches);
-      foreach ($matches[1] as $link) {
-        $titles[] = str_replace('_', ' ', urldecode($link));
+    // Match the "See also" section between its h2 and the next h2 (or end of string).
+    if (preg_match('/<h2[^>]*>\s*(?:<span[^>]*>)?See also(?:<\/span>)?\s*<\/h2>(.*?)(?=<h2|$)/si', $html, $section)) {
+      // Extract /wiki/ hrefs — standard Wikipedia article links.
+      preg_match_all('/<a\s[^>]*href="\/wiki\/([^"#]+)"[^>]*>/i', $section[1], $matches);
+      foreach ($matches[1] as $slug) {
+        // Skip special namespaces (File:, Template:, Help:, etc.).
+        if (str_contains($slug, ':')) continue;
+        $titles[] = str_replace('_', ' ', urldecode($slug));
       }
     }
     return $titles;

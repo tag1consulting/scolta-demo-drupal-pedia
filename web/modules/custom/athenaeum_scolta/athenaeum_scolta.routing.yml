@@ -1,0 +1,10 @@
+athenaeum_scolta.random_article:
+  path: '/random'
+  defaults:
+    _controller: '\Drupal\athenaeum_scolta\Controller\RandomArticleController::handle'
+    _title: 'Random Article'
+  requirements:
+    _access: 'TRUE'
+  options:
+    _priority: 100
+    no_cache: TRUE

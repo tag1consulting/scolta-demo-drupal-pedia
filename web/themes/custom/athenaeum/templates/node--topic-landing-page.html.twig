@@ -7,17 +7,25 @@
 <article{{ attributes.addClass(classes) }}>
   <div class="page-wrapper">
 
-    <header class="article-header">
+    <header class="article-header" style="margin-bottom:2rem">
       <div class="article-header__eyebrow" style="font-size:0.82rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-burgundy);margin-bottom:0.5rem">Topic</div>
       <h1 class="article-header__title">{{ node.label }}</h1>
     </header>
 
     {% if content.body %}
-      <div class="article-lead">{{ content.body }}</div>
+      <div class="article-lead" style="margin-bottom:2rem">{{ content.body }}</div>
     {% endif %}
 
-    {# Article listing — populated by Views block placed via block layout in Session 4 #}
-    {{ page.content }}
+    {% if topic_articles %}
+      <section>
+        <h2 style="font-family:var(--font-serif);color:var(--color-navy);border-bottom:2px solid var(--color-border);padding-bottom:0.5rem;margin-bottom:1.5rem">
+          Featured Articles
+        </h2>
+        <div class="article-grid">{{ topic_articles }}</div>
+      </section>
+    {% else %}
+      <p style="color:#888"><em>No articles assigned to this topic yet.</em></p>
+    {% endif %}
 
   </div>
 </article>

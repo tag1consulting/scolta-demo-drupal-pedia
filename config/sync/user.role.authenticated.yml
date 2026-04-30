@@ -8,6 +8,7 @@ dependencies:
     - comment
     - file
     - filter
+    - scolta
     - search
     - shortcut
     - system
@@ -25,4 +26,5 @@ permissions:
   - 'post comments'
   - 'search content'
   - 'skip comment approval'
+  - 'use scolta ai'
   - 'use text format basic_html'
