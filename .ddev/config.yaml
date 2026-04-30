@@ -13,7 +13,6 @@ database:
 hooks:
   post-start:
     - exec: composer install --no-interaction
-    - exec: "mkdir -p /var/www/html/web/modules/contrib/scolta-drupal/{js/wasm,css} && cp /var/www/html/patches/scolta.js /var/www/html/web/modules/contrib/scolta-drupal/js/scolta.js 2>/dev/null || true && cp /var/www/html/vendor/tag1/scolta-php/assets/css/scolta.css /var/www/html/web/modules/contrib/scolta-drupal/css/scolta.css 2>/dev/null || true && cp /var/www/html/vendor/tag1/scolta-php/assets/wasm/scolta_core.js /var/www/html/web/modules/contrib/scolta-drupal/js/wasm/scolta_core.js 2>/dev/null || true && cp /var/www/html/vendor/tag1/scolta-php/assets/wasm/scolta_core_bg.wasm /var/www/html/web/modules/contrib/scolta-drupal/js/wasm/scolta_core_bg.wasm 2>/dev/null || true"
     - exec: |
         if [ -f /var/www/html/db/dump.sql.gz ]; then
           echo "Importing database..."
