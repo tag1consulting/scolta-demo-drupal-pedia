@@ -208,6 +208,12 @@ p { margin: 0 0 1.1em; }
   padding: 2rem;
 }
 
+.page-wrapper .page-wrapper {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
 .page-wrapper--article {
   display: grid;
   grid-template-columns: 1fr 280px;
@@ -501,11 +507,19 @@ a.topic-badge:hover {
 
 .article-body h3 { font-size: 1.15rem; }
 
+/* Hide Wikipedia structural tables that need Wikipedia CSS to render properly */
+.article-body table.clade,
+.article-body table.clade * {
+  display: none;
+}
+
 .article-body table {
   border-collapse: collapse;
   margin: 1.5rem 0;
   font-size: 0.9rem;
-  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
 }
 
 .article-body td, .article-body th {

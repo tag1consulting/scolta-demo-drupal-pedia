@@ -586,38 +586,156 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   protected function cleanWikipediaHtml(string $html): string {
-    $html = preg_replace('/<span class="mw-editsection[^"]*"[^>]*>.*?<\/span>/s', '', $html);
-    $html = preg_replace('/<div class="(?:navbox|mw-empty-elt|sister-wikipedia|noprint|dablink|hatnote)[^"]*"[^>]*>.*?<\/div>/si', '', $html);
-    $html = preg_replace('/<sup[^>]*class="[^"]*reference[^"]*"[^>]*>.*?<\/sup>/s', '', $html);
-    $html = preg_replace('/<a href="\/wiki\/([^"#]+)"[^>]*>([^<]+)<\/a>/', '<a href="/article/$1" data-wiki-link="$1">$2</a>', $html);
+    $dom = new \DOMDocument('1.0', 'UTF-8');
+    libxml_use_internal_errors(true);
+    // Load as full HTML document so body element is always present.
+    $dom->loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body>' . $html . '</body></html>');
+    libxml_clear_errors();
+
+    $xpath = new \DOMXPath($dom);
+
+    // Remove elements by XPath query, converting NodeList to array first to
+    // avoid live-NodeList mutation issues during removal.
+    $toRemove = [];
+    foreach ($xpath->query('//style') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"shortdescription")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"mw-empty-elt")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"mw-editsection")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//sup[contains(@class,"reference")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//table[contains(@class,"infobox")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//table[contains(@class,"clade")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"navbox")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"hatnote")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"dablink")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"sister-wikipedia")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"noprint")]') as $el) $toRemove[] = $el;
+    foreach ($toRemove as $el) {
+      if ($el->parentNode) $el->parentNode->removeChild($el);
+    }
+
+    // Rewrite Wikipedia article links to local paths.
+    foreach ($xpath->query('//a[starts-with(@href,"/wiki/")]') as $el) {
+      $href = $el->getAttribute('href');
+      if (preg_match('/^\/wiki\/([^#?]+)/', $href, $m)) {
+        $el->setAttribute('href', '/article/' . $m[1]);
+        $el->setAttribute('data-wiki-link', $m[1]);
+      }
+    }
+
+    $body = $dom->getElementsByTagName('body')->item(0);
+    if ($body) {
+      $out = '';
+      foreach ($body->childNodes as $child) {
+        $out .= $dom->saveHTML($child);
+      }
+      return trim($out);
+    }
     return trim($html);
   }
 
-  protected function extractLead(string $html): string {
-    // Strip infoboxes, tables, navboxes, and style tags before extracting lead.
-    $stripped = preg_replace('/<style[^>]*>.*?<\/style>/si', '', $html);
-    $stripped = preg_replace('/<table[^>]*>.*?<\/table>/si', '', $stripped);
-    $stripped = preg_replace('/<div[^>]*class="[^"]*(?:infobox|navbox|hatnote|thumb)[^"]*"[^>]*>.*?<\/div>/si', '', $stripped);
+  /**
+   * Re-cleans stored article body HTML to remove Wikipedia noise.
+   */
+  #[CLI\Command(name: 'athenaeum:clean-bodies', aliases: ['ath-clean'])]
+  #[CLI\Usage(name: 'drush athenaeum:clean-bodies', description: 'Strip style tags, infoboxes, and navboxes from stored article bodies')]
+  public function cleanBodies(): void {
+    $this->output()->writeln('<info>Re-cleaning article body HTML...</info>');
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
 
-    // Find the first paragraph with substantial text (>60 chars after stripping tags).
-    if (preg_match_all('/<p[^>]*>(.*?)<\/p>/si', $stripped, $m)) {
-      foreach ($m[1] as $candidate) {
-        $text = trim(strip_tags($candidate));
-        if (strlen($text) >= 60) {
-          return $text;
-        }
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->condition('body.format', 'full_html')
+      ->execute();
+
+    $total = count($nids);
+    $count = 0;
+
+    foreach (array_chunk($nids, 25) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        $raw = $node->get('body')->value ?? '';
+        if (empty($raw)) continue;
+        $clean = $this->cleanWikipediaHtml($raw);
+        $node->set('body', ['value' => $clean, 'format' => 'full_html']);
+        $node->save();
+      }
+      $nodeStorage->resetCache($chunk);
+      if ($count % 250 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] cleaned', $count, $total));
       }
     }
-    // Fallback to original html.
-    if (preg_match_all('/<p[^>]*>(.*?)<\/p>/si', $html, $m)) {
-      foreach ($m[1] as $candidate) {
-        $text = trim(strip_tags($candidate));
-        if (strlen($text) >= 60) {
-          return $text;
-        }
+
+    $this->output()->writeln(sprintf('<info>Done. Cleaned %d articles.</info>', $count));
+  }
+
+  protected function extractLead(string $html): string {
+    $dom = new \DOMDocument('1.0', 'UTF-8');
+    libxml_use_internal_errors(true);
+    $dom->loadHTML('<!DOCTYPE html><html><head><meta charset="UTF-8"/></head><body>' . $html . '</body></html>');
+    libxml_clear_errors();
+
+    $xpath = new \DOMXPath($dom);
+    // Remove all noise elements before looking for the first real paragraph.
+    $toRemove = [];
+    foreach ($xpath->query('//style') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//table') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//div[contains(@class,"thumb")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"shortdescription")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"hatnote")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"navbox")]') as $el) $toRemove[] = $el;
+    foreach ($xpath->query('//*[contains(@class,"noprint")]') as $el) $toRemove[] = $el;
+    foreach ($toRemove as $el) {
+      if ($el->parentNode) $el->parentNode->removeChild($el);
+    }
+
+    foreach ($xpath->query('//p') as $p) {
+      $text = trim($p->textContent);
+      if (strlen($text) >= 60) {
+        return $text;
       }
     }
     return '';
+  }
+
+  /**
+   * Re-extracts lead paragraphs from already-cleaned body HTML.
+   */
+  #[CLI\Command(name: 'athenaeum:fix-leads', aliases: ['ath-leads'])]
+  #[CLI\Usage(name: 'drush athenaeum:fix-leads', description: 'Re-extract lead paragraphs from cleaned article bodies')]
+  public function fixLeads(): void {
+    $this->output()->writeln('<info>Re-extracting lead paragraphs...</info>');
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
+    $count = 0;
+    $fixed = 0;
+
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        $body = $node->get('body')->value ?? '';
+        if (empty($body)) continue;
+        $lead = $this->extractLead($body);
+        if (empty($lead)) continue;
+        $node->set('field_lead', ['value' => $lead, 'format' => 'plain_text']);
+        $node->save();
+        $fixed++;
+      }
+      $nodeStorage->resetCache($chunk);
+      if ($count % 500 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] processed, %d leads updated', $count, $total, $fixed));
+      }
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. Updated leads for %d articles.</info>', $fixed));
   }
 
   protected function createArticleNode(array $data): void {
