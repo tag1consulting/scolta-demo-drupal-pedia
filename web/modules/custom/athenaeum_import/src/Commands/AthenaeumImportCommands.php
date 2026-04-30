@@ -656,7 +656,8 @@ class AthenaeumImportCommands extends DrushCommands {
     $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '-', strtolower($title));
     $destination = 'public://article-images/' . substr($safeTitle, 0, 60) . '.' . $ext;
 
-    \Drupal::service('file_system')->prepareDirectory('public://article-images', \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
+    $dir = 'public://article-images';
+    \Drupal::service('file_system')->prepareDirectory($dir, \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
     return $this->fileRepository->writeData($imageData, $destination, \Drupal\Core\File\FileExists::Replace);
   }
 
