@@ -3,9 +3,9 @@
 namespace Drupal\athenaeum_import\Commands;
 
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\File\FileRepositoryInterface;
+use Drupal\file\FileRepositoryInterface;
+use Drush\Attributes as CLI;
 use Drush\Commands\DrushCommands;
-use Psr\Log\LoggerInterface;
 
 /**
  * Drush commands for importing Wikipedia Featured Articles.
@@ -21,18 +21,15 @@ class AthenaeumImportCommands extends DrushCommands {
   public function __construct(
     protected EntityTypeManagerInterface $entityTypeManager,
     protected FileRepositoryInterface $fileRepository,
-    protected LoggerInterface $logger,
   ) {
     parent::__construct();
   }
 
   /**
    * Fetches the list of Wikipedia Featured Articles and saves a manifest.
-   *
-   * @command athenaeum:fetch-list
-   * @aliases ath-list
-   * @usage drush athenaeum:fetch-list
    */
+  #[CLI\Command(name: 'athenaeum:fetch-list', aliases: ['ath-list'])]
+  #[CLI\Usage(name: 'drush athenaeum:fetch-list', description: 'Fetch ~6,000 Featured Article titles from Wikipedia')]
   public function fetchList(): void {
     $this->output()->writeln('<info>Fetching Wikipedia Featured Articles list...</info>');
 
@@ -54,7 +51,7 @@ class AthenaeumImportCommands extends DrushCommands {
 
       $data = $this->apiRequest($params);
       if (!$data || isset($data['error'])) {
-        $this->logger->error('API error: @err', ['@err' => json_encode($data['error'] ?? 'unknown')]);
+        $this->io()->error('API error: ' . json_encode($data['error'] ?? 'unknown'));
         return;
       }
 
@@ -73,17 +70,15 @@ class AthenaeumImportCommands extends DrushCommands {
 
   /**
    * Imports Wikipedia Featured Articles from the manifest.
-   *
-   * @command athenaeum:import-articles
-   * @aliases ath-import
-   * @option start Starting index (for resuming)
-   * @option limit Maximum articles to import (0 = all)
-   * @usage drush athenaeum:import-articles
-   * @usage drush athenaeum:import-articles --start=500 --limit=100
    */
+  #[CLI\Command(name: 'athenaeum:import-articles', aliases: ['ath-import'])]
+  #[CLI\Option(name: 'start', description: 'Starting index (for resuming)')]
+  #[CLI\Option(name: 'limit', description: 'Maximum articles to import (0 = all)')]
+  #[CLI\Usage(name: 'drush athenaeum:import-articles', description: 'Import all Featured Articles')]
+  #[CLI\Usage(name: 'drush athenaeum:import-articles --start=500 --limit=100', description: 'Resume from article 500, import 100')]
   public function importArticles(array $options = ['start' => 0, 'limit' => 0]): void {
     if (!file_exists(self::MANIFEST_PATH)) {
-      $this->logger->error('Manifest not found. Run drush athenaeum:fetch-list first.');
+      $this->io()->error('Manifest not found. Run drush athenaeum:fetch-list first.');
       return;
     }
 
@@ -104,7 +99,7 @@ class AthenaeumImportCommands extends DrushCommands {
       $title = $item['title'];
       $pageid = $item['pageid'];
 
-      // Check if already imported.
+      // Skip if already imported.
       $existing = $nodeStorage->loadByProperties([
         'type' => 'featured_article',
         'field_wikipedia_pageid' => $pageid,
@@ -118,19 +113,18 @@ class AthenaeumImportCommands extends DrushCommands {
 
       $articleData = $this->fetchArticle($title, $pageid);
       if (!$articleData) {
-        $this->logger->warning('Failed to fetch article: @title', ['@title' => $title]);
+        $this->output()->writeln(sprintf('  <comment>  SKIP: failed to fetch %s</comment>', $title));
         continue;
       }
 
       $this->createArticleNode($articleData);
       $imported++;
 
-      // Rate limiting.
       usleep(self::RATE_LIMIT_DELAY_MS * 1000);
 
-      // Batch flush entity cache.
       if ($imported % self::BATCH_SIZE === 0) {
-        $this->entityTypeManager->getStorage('node')->resetCache();
+        $nodeStorage->resetCache();
+        $this->output()->writeln(sprintf('<info>  [checkpoint] %d imported, %d skipped</info>', $imported, $skipped));
       }
     }
 
@@ -139,11 +133,9 @@ class AthenaeumImportCommands extends DrushCommands {
 
   /**
    * Maps Wikipedia categories to Drupal taxonomy and assigns era/region.
-   *
-   * @command athenaeum:import-categories
-   * @aliases ath-cats
-   * @usage drush athenaeum:import-categories
    */
+  #[CLI\Command(name: 'athenaeum:import-categories', aliases: ['ath-cats'])]
+  #[CLI\Usage(name: 'drush athenaeum:import-categories', description: 'Map Wikipedia categories to Drupal taxonomy')]
   public function importCategories(): void {
     $this->output()->writeln('<info>Importing categories for all featured articles...</info>');
 
@@ -155,7 +147,9 @@ class AthenaeumImportCommands extends DrushCommands {
     foreach ($nodes as $node) {
       $count++;
       $title = $node->label();
-      $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+      if ($count % 100 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+      }
 
       $params = [
         'action' => 'query',
@@ -194,11 +188,9 @@ class AthenaeumImportCommands extends DrushCommands {
 
   /**
    * Downloads and attaches lead images from Wikimedia Commons.
-   *
-   * @command athenaeum:import-images
-   * @aliases ath-images
-   * @usage drush athenaeum:import-images
    */
+  #[CLI\Command(name: 'athenaeum:import-images', aliases: ['ath-images'])]
+  #[CLI\Usage(name: 'drush athenaeum:import-images', description: 'Download lead images from Wikimedia Commons')]
   public function importImages(): void {
     $this->output()->writeln('<info>Importing lead images from Wikimedia Commons...</info>');
 
@@ -211,32 +203,23 @@ class AthenaeumImportCommands extends DrushCommands {
     foreach ($nodes as $node) {
       $count++;
 
-      // Skip if image already attached.
       if (!$node->get('field_image')->isEmpty()) {
         continue;
       }
 
-      $title = $node->label();
-      $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
-
-      $imageData = $this->fetchLeadImage($title);
-      if (!$imageData) {
-        continue;
+      if ($count % 100 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] processed, %d images attached', $count, $total, $attached));
       }
+
+      $title = $node->label();
+      $imageData = $this->fetchLeadImage($title);
+      if (!$imageData) continue;
 
       $fileEntity = $this->downloadImage($imageData['url'], $title);
-      if (!$fileEntity) {
-        continue;
-      }
+      if (!$fileEntity) continue;
 
-      $node->set('field_image', [
-        'target_id' => $fileEntity->id(),
-        'alt' => $title,
-      ]);
-      $credit = $imageData['credit'] ?? '';
-      if ($imageData['license'] ?? '') {
-        $credit .= ($credit ? ' · ' : '') . $imageData['license'];
-      }
+      $node->set('field_image', ['target_id' => $fileEntity->id(), 'alt' => $title]);
+      $credit = trim(($imageData['credit'] ?? '') . ' · ' . ($imageData['license'] ?? ''), ' · ');
       $node->set('field_image_credit', $credit);
       $node->save();
       $attached++;
@@ -249,11 +232,9 @@ class AthenaeumImportCommands extends DrushCommands {
 
   /**
    * Creates entity references from Wikipedia "See also" sections.
-   *
-   * @command athenaeum:cross-reference
-   * @aliases ath-xref
-   * @usage drush athenaeum:cross-reference
    */
+  #[CLI\Command(name: 'athenaeum:cross-reference', aliases: ['ath-xref'])]
+  #[CLI\Usage(name: 'drush athenaeum:cross-reference', description: 'Build cross-references from "See also" sections')]
   public function crossReference(): void {
     $this->output()->writeln('<info>Building cross-references from "See also" sections...</info>');
 
@@ -263,7 +244,6 @@ class AthenaeumImportCommands extends DrushCommands {
     $count = 0;
     $linked = 0;
 
-    // Build a title → nid lookup map.
     $titleMap = [];
     foreach ($nodes as $node) {
       $titleMap[strtolower($node->label())] = $node->id();
@@ -289,40 +269,30 @@ class AthenaeumImportCommands extends DrushCommands {
         $node->set('field_related_articles', $refs);
         $node->save();
         $linked++;
-        $this->output()->writeln(sprintf('  [%d/%d] %s → %d links', $count, $total, $node->label(), count($refs)));
       }
     }
 
-    $this->output()->writeln(sprintf('<info>Done. Added cross-references to %d articles.</info>', $linked));
+    $this->output()->writeln(sprintf('<info>Done. Cross-references added to %d articles.</info>', $linked));
   }
 
   /**
    * Generates Topic Landing Page nodes for each Level-1 topic term.
-   *
-   * @command athenaeum:generate-landing-pages
-   * @aliases ath-landing
-   * @usage drush athenaeum:generate-landing-pages
    */
+  #[CLI\Command(name: 'athenaeum:generate-landing-pages', aliases: ['ath-landing'])]
+  #[CLI\Usage(name: 'drush athenaeum:generate-landing-pages', description: 'Create Topic Landing Pages for Level-1 topics')]
   public function generateLandingPages(): void {
     $this->output()->writeln('<info>Generating Topic Landing Pages...</info>');
 
     $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-
-    // Get Level-1 terms (no parent).
     $level1 = $termStorage->loadByProperties(['vid' => 'topics']);
     $created = 0;
 
     foreach ($level1 as $term) {
-      // Only top-level (no parent).
       $parents = $termStorage->loadParents($term->id());
       if (!empty($parents)) continue;
 
-      // Check if landing page exists.
-      $existing = $nodeStorage->loadByProperties([
-        'type' => 'topic_landing_page',
-        'field_topic' => $term->id(),
-      ]);
+      $existing = $nodeStorage->loadByProperties(['type' => 'topic_landing_page', 'field_topic' => $term->id()]);
       if (!empty($existing)) continue;
 
       $name = $term->getName();
@@ -338,7 +308,7 @@ class AthenaeumImportCommands extends DrushCommands {
         'status' => 1,
       ])->save();
 
-      $this->output()->writeln("  Created landing page: $name");
+      $this->output()->writeln("  Created: $name");
       $created++;
     }
 
@@ -346,17 +316,15 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   /**
-   * AI enrichment pass: generates "Why This Matters" blurbs.
-   *
-   * @command athenaeum:enrich
-   * @aliases ath-enrich
-   * @option batch-size Number of articles to process per batch
-   * @usage drush athenaeum:enrich
+   * AI enrichment: generates "Why This Matters" blurbs via Claude API.
    */
+  #[CLI\Command(name: 'athenaeum:enrich', aliases: ['ath-enrich'])]
+  #[CLI\Option(name: 'batch-size', description: 'Articles per batch')]
+  #[CLI\Usage(name: 'drush athenaeum:enrich', description: 'Generate AI "Why This Matters" blurbs (requires ANTHROPIC_API_KEY)')]
   public function enrich(array $options = ['batch-size' => 100]): void {
     $apiKey = getenv('ANTHROPIC_API_KEY') ?: getenv('SCOLTA_ANTHROPIC_API_KEY');
     if (!$apiKey) {
-      $this->logger->error('ANTHROPIC_API_KEY not set. This command requires it for AI enrichment.');
+      $this->io()->error('ANTHROPIC_API_KEY not set. Required for AI enrichment.');
       return;
     }
 
@@ -369,14 +337,15 @@ class AthenaeumImportCommands extends DrushCommands {
 
     foreach ($nodes as $node) {
       $count++;
-
       if (!$node->get('field_why_it_matters')->isEmpty()) continue;
 
       $title = $node->label();
       $lead = $node->get('field_lead')->value ?? '';
       if (empty($lead)) continue;
 
-      $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+      if ($count % 50 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] %s', $count, $total, $title));
+      }
 
       $blurb = $this->generateWhyItMatters($title, $lead, $apiKey);
       if ($blurb) {
@@ -385,7 +354,7 @@ class AthenaeumImportCommands extends DrushCommands {
         $enriched++;
       }
 
-      usleep(500000); // 500ms between AI calls.
+      usleep(500000);
     }
 
     $this->output()->writeln(sprintf('<info>Done. Enriched %d articles.</info>', $enriched));
@@ -412,7 +381,7 @@ class AthenaeumImportCommands extends DrushCommands {
     $params = [
       'action' => 'parse',
       'page' => $title,
-      'prop' => 'text|sections|categories|links|images|iwlinks|properties|revid',
+      'prop' => 'text|categories|revid',
       'disablelimitreport' => '1',
       'disableeditsection' => '1',
       'format' => 'json',
@@ -440,52 +409,40 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   protected function cleanWikipediaHtml(string $html): string {
-    // Remove edit section links.
     $html = preg_replace('/<span class="mw-editsection[^"]*"[^>]*>.*?<\/span>/s', '', $html);
-    // Remove Wikipedia navboxes (hatnotes, infobox sidebars become divs).
     $html = preg_replace('/<div class="(?:navbox|mw-empty-elt|sister-wikipedia|noprint|dablink|hatnote)[^"]*"[^>]*>.*?<\/div>/si', '', $html);
-    // Remove reference section clutter (keep ref list).
     $html = preg_replace('/<sup[^>]*class="[^"]*reference[^"]*"[^>]*>.*?<\/sup>/s', '', $html);
-    // Fix internal Wikipedia links → strip to plain text for now (cross-ref pass will fix).
     $html = preg_replace('/<a href="\/wiki\/([^"#]+)"[^>]*>([^<]+)<\/a>/', '<a href="/article/$1" data-wiki-link="$1">$2</a>', $html);
-    // Remove external link icons.
-    $html = preg_replace('/<span class="mw-[a-z-]+-icon[^"]*"[^>]*>.*?<\/span>/s', '', $html);
     return trim($html);
   }
 
   protected function extractLead(string $html): string {
-    // The lead is the first <p> that's substantial.
-    if (preg_match('/<p[^>]*>(.+?)<\/p>/s', $html, $m)) {
-      return trim(strip_tags($m[1]));
+    if (preg_match_all('/<p[^>]*>(.{80,}?)<\/p>/s', $html, $m)) {
+      return trim(strip_tags($m[1][0]));
     }
     return '';
   }
 
   protected function createArticleNode(array $data): void {
     $nodeStorage = $this->entityTypeManager->getStorage('node');
-
-    $node = $nodeStorage->create([
+    $nodeStorage->create([
       'type' => 'featured_article',
       'title' => $data['title'],
-      'body' => [
-        'value' => $data['html'],
-        'format' => 'full_html',
-      ],
+      'body' => ['value' => $data['html'], 'format' => 'full_html'],
       'field_lead' => ['value' => $data['lead'], 'format' => 'plain_text'],
       'field_word_count' => $data['word_count'],
       'field_reference_count' => $data['ref_count'],
       'field_original_url' => ['uri' => $data['original_url'], 'title' => $data['title']],
       'field_wikipedia_pageid' => $data['pageid'],
       'status' => 1,
-    ]);
-    $node->save();
+    ])->save();
   }
 
   protected function fetchLeadImage(string $title): ?array {
     $params = [
       'action' => 'query',
       'titles' => $title,
-      'prop' => 'pageimages|imageinfo',
+      'prop' => 'pageimages',
       'pithumbsize' => '1200',
       'piprop' => 'thumbnail|name',
       'format' => 'json',
@@ -501,11 +458,7 @@ class AthenaeumImportCommands extends DrushCommands {
     $imageName = $page['pageimage'] ?? '';
     $license = $this->fetchImageLicense($imageName);
 
-    return [
-      'url' => $thumbnail['source'],
-      'credit' => $imageName,
-      'license' => $license,
-    ];
+    return ['url' => $thumbnail['source'], 'credit' => $imageName, 'license' => $license];
   }
 
   protected function fetchImageLicense(string $imageName): string {
@@ -535,28 +488,27 @@ class AthenaeumImportCommands extends DrushCommands {
     $destination = 'public://article-images/' . substr($safeTitle, 0, 60) . '.' . $ext;
 
     \Drupal::service('file_system')->prepareDirectory('public://article-images', \Drupal\Core\File\FileSystemInterface::CREATE_DIRECTORY);
-
     return $this->fileRepository->writeData($imageData, $destination, \Drupal\Core\File\FileExists::Replace);
   }
 
   protected function mapCategoriesToTopics(array $categories): array {
     $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
-
     $keywordMap = [
       'science' => 'Science', 'physics' => 'Science', 'chemistry' => 'Science',
       'biology' => 'Science', 'astronomy' => 'Science', 'mathematics' => 'Mathematics',
       'history' => 'History', 'war' => 'Military', 'battle' => 'Military',
-      'biography' => 'Biography', 'people' => 'Biography',
+      'biography' => 'Biography', 'born' => 'Biography',
       'art' => 'Arts', 'music' => 'Arts', 'literature' => 'Arts', 'film' => 'Arts',
       'architecture' => 'Arts',
       'technology' => 'Technology', 'engineering' => 'Engineering',
       'computing' => 'Technology', 'software' => 'Technology',
-      'nature' => 'Nature', 'animal' => 'Nature', 'species' => 'Nature', 'plant' => 'Nature',
+      'animal' => 'Nature', 'species' => 'Nature', 'plant' => 'Nature', 'ecology' => 'Nature',
       'geography' => 'Geography', 'country' => 'Geography', 'city' => 'Geography',
-      'sports' => 'Sports', 'sport' => 'Sports',
+      'sports' => 'Sports', 'sport' => 'Sports', 'olympic' => 'Sports',
       'religion' => 'Religion', 'philosophy' => 'Philosophy',
       'society' => 'Society', 'politics' => 'Society', 'economics' => 'Society',
       'medicine' => 'Medicine', 'disease' => 'Medicine', 'health' => 'Medicine',
+      'military' => 'Military', 'naval' => 'Military',
     ];
 
     $matchedTopics = [];
@@ -576,19 +528,17 @@ class AthenaeumImportCommands extends DrushCommands {
         $termIds[] = $term->id();
       }
     }
-
     return array_unique($termIds);
   }
 
   protected function mapCategoriesToEra(array $categories): ?int {
     $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
-
     $eraMap = [
-      'Ancient (before 500 CE)' => ['ancient', 'classical antiquity', 'roman empire', 'greek', 'egypt', 'mesopotamia', 'bronze age', 'iron age'],
-      'Medieval (500–1500)' => ['medieval', 'middle ages', 'byzantine', 'crusades', 'feudal', 'viking'],
-      'Early Modern (1500–1800)' => ['early modern', '16th century', '17th century', '18th century', 'renaissance', 'reformation', 'enlightenment'],
-      'Modern (1800–1945)' => ['19th century', '20th century', 'world war', 'victorian', 'industrial revolution', 'colonial'],
-      'Contemporary (1945–present)' => ['21st century', 'cold war', 'contemporary', 'modern music', 'post-war'],
+      'Ancient (before 500 CE)' => ['ancient', 'classical antiquity', 'roman empire', 'bc ', 'bce', 'greek antiquity', 'bronze age', 'iron age', 'egypt', 'mesopotamia'],
+      'Medieval (500–1500)' => ['medieval', 'middle ages', 'byzantine', 'crusades', 'feudal', 'viking', '10th century', '11th century', '12th century', '13th century', '14th century', '15th century'],
+      'Early Modern (1500–1800)' => ['early modern', '16th century', '17th century', '18th century', 'renaissance', 'reformation', 'enlightenment', 'colonial era'],
+      'Modern (1800–1945)' => ['19th century', 'world war', 'victorian', 'industrial revolution', 'edwardian', 'interwar'],
+      'Contemporary (1945–present)' => ['21st century', 'cold war', 'contemporary', 'post-war', '1950s', '1960s', '1970s', '1980s', '1990s', '2000s'],
     ];
 
     $catsStr = strtolower(implode(' ', $categories));
@@ -600,8 +550,6 @@ class AthenaeumImportCommands extends DrushCommands {
         }
       }
     }
-
-    // Default to Timeless for science/nature topics.
     $terms = $termStorage->loadByProperties(['name' => 'Timeless', 'vid' => 'era']);
     if ($term = reset($terms)) return $term->id();
     return NULL;
@@ -609,16 +557,15 @@ class AthenaeumImportCommands extends DrushCommands {
 
   protected function mapCategoriesToRegion(array $categories): ?int {
     $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
-
     $regionMap = [
-      'Africa' => ['africa', 'african', 'egypt', 'ethiopia', 'nigeria', 'kenya', 'zimbabwe'],
-      'Americas' => ['america', 'united states', 'canada', 'mexico', 'brazil', 'latin', 'caribbean'],
-      'Asia' => ['asia', 'asian', 'china', 'japan', 'india', 'korea', 'middle east', 'iran', 'iraq'],
-      'Europe' => ['europe', 'european', 'british', 'french', 'german', 'italian', 'spanish', 'roman', 'greek'],
-      'Oceania' => ['australia', 'new zealand', 'pacific', 'oceania'],
+      'Africa' => ['africa', 'african', 'egypt', 'ethiopia', 'nigeria', 'kenya', 'zimbabwe', 'ghana', 'sudan'],
+      'Americas' => ['america', 'united states', 'canada', 'mexico', 'brazil', 'latin america', 'caribbean', 'argentina', 'chile'],
+      'Asia' => ['asia', 'asian', 'china', 'japan', 'india', 'korea', 'middle east', 'iran', 'iraq', 'turkey', 'thailand', 'vietnam'],
+      'Europe' => ['europe', 'european', 'british', 'french', 'german', 'italian', 'spanish', 'roman', 'greek', 'russian', 'dutch'],
+      'Oceania' => ['australia', 'new zealand', 'pacific islands', 'papua', 'oceania'],
       'Antarctica' => ['antarctic', 'antarctica', 'south pole'],
-      'Space' => ['space', 'astronomy', 'planet', 'star', 'galaxy', 'universe', 'cosmos'],
-      'Global / Multiple Regions' => ['world', 'global', 'international', 'worldwide'],
+      'Space' => ['space', 'astronomy', 'planet', 'star ', 'galaxy', 'universe', 'cosmos', 'spacecraft'],
+      'Global / Multiple Regions' => ['world', 'global', 'international', 'worldwide', 'transatlantic'],
     ];
 
     $catsStr = strtolower(implode(' ', $categories));
@@ -630,7 +577,6 @@ class AthenaeumImportCommands extends DrushCommands {
         }
       }
     }
-
     $terms = $termStorage->loadByProperties(['name' => 'Not Geographic', 'vid' => 'region']);
     if ($term = reset($terms)) return $term->id();
     return NULL;
@@ -639,7 +585,7 @@ class AthenaeumImportCommands extends DrushCommands {
   protected function extractSeeAlso(string $html): array {
     $titles = [];
     if (preg_match('/<h2[^>]*>See also<\/h2>(.*?)(?:<h2|$)/si', $html, $section)) {
-      preg_match_all('/<a[^>]+data-wiki-link="([^"]+)"[^>]*>/i', $section[1], $matches);
+      preg_match_all('/data-wiki-link="([^"]+)"/i', $section[1], $matches);
       foreach ($matches[1] as $link) {
         $titles[] = str_replace('_', ' ', urldecode($link));
       }
@@ -648,9 +594,8 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   protected function generateWhyItMatters(string $title, string $lead, string $apiKey): ?string {
-    $prompt = "In 2-3 sentences, explain why the Wikipedia article about '{$title}' matters in the broader context of human knowledge. "
-      . "The article begins: \"{$lead}\". "
-      . "Write for a curious general audience. Do not start with 'This article'.";
+    $prompt = "In 2-3 sentences, explain why the Wikipedia article about '{$title}' matters. "
+      . "The article begins: \"{$lead}\". Write for a curious general audience. Don't start with 'This article'.";
 
     $payload = json_encode([
       'model' => 'claude-haiku-4-5-20251001',
@@ -673,7 +618,6 @@ class AthenaeumImportCommands extends DrushCommands {
 
     $response = @file_get_contents('https://api.anthropic.com/v1/messages', FALSE, $ctx);
     if (!$response) return NULL;
-
     $data = json_decode($response, TRUE);
     return $data['content'][0]['text'] ?? NULL;
   }
