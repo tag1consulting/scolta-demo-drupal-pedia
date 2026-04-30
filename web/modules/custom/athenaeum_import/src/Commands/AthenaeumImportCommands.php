@@ -146,6 +146,33 @@ class AthenaeumImportCommands extends DrushCommands {
     }
 
     $nodeStorage = $this->entityTypeManager->getStorage('node');
+    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+
+    // Pre-load all taxonomy term IDs once to avoid per-article DB queries.
+    $loadTermIds = function (string $vid, array $names) use ($termStorage): array {
+      $ids = [];
+      foreach ($names as $name) {
+        $terms = $termStorage->loadByProperties(['name' => $name, 'vid' => $vid]);
+        if ($term = reset($terms)) {
+          $ids[$name] = (int) $term->id();
+        }
+      }
+      return $ids;
+    };
+
+    $eraTermIds = $loadTermIds('era', [
+      'Ancient (before 500 CE)', 'Medieval (500–1500)', 'Early Modern (1500–1800)',
+      'Modern (1800–1945)', 'Contemporary (1945–present)', 'Timeless',
+    ]);
+    $regionTermIds = $loadTermIds('region', [
+      'Africa', 'Americas', 'Asia', 'Europe', 'Oceania',
+      'Antarctica', 'Space', 'Global / Multiple Regions', 'Not Geographic',
+    ]);
+    $topicTermIds = $loadTermIds('topics', [
+      'Science', 'Mathematics', 'History', 'Military', 'Biography', 'Arts',
+      'Technology', 'Engineering', 'Nature', 'Geography', 'Sports',
+      'Religion', 'Philosophy', 'Society', 'Medicine',
+    ]);
 
     $nids = \Drupal::entityQuery('node')
       ->accessCheck(FALSE)
@@ -153,59 +180,75 @@ class AthenaeumImportCommands extends DrushCommands {
       ->execute();
 
     $total = count($nids);
-    $count = 0;
+    $processed = 0;
     $skipped = 0;
 
-    foreach (array_chunk($nids, self::BATCH_SIZE) as $chunk) {
+    // Process in chunks of 50 nodes. For each chunk, collect the nodes that
+    // need new categories, batch-fetch their Wikipedia categories in one API
+    // call, then save all updated nodes together.
+    foreach (array_chunk($nids, self::BATCH_SIZE) as $chunkIdx => $chunk) {
       $nodes = $nodeStorage->loadMultiple($chunk);
-      foreach ($nodes as $node) {
-        $count++;
-        $title = $node->label();
-        if ($count % 100 === 0) {
-          $this->output()->writeln(sprintf('  [%d/%d] %s (skipped: %d)', $count, $total, $title, $skipped));
-        }
 
-        // Skip articles that already have taxonomy assigned (unless --force).
+      // Separate nodes that need processing from those to skip.
+      $toProcess = [];
+      foreach ($nodes as $node) {
         if (!$force && (!$node->get('field_topics')->isEmpty() || !$node->get('field_era')->isEmpty() || !$node->get('field_region')->isEmpty())) {
           $skipped++;
-          continue;
         }
+        else {
+          $toProcess[$node->label()] = $node;
+        }
+      }
 
+      // Batch-fetch categories for all titles needing processing in one API call.
+      if (!empty($toProcess)) {
         $params = [
           'action' => 'query',
-          'titles' => $title,
+          'titles' => implode('|', array_keys($toProcess)),
           'prop' => 'categories',
           'cllimit' => '100',
           'format' => 'json',
         ];
         $data = $this->apiRequest($params);
-        if (!$data) continue;
-
         $pages = $data['query']['pages'] ?? [];
-        $page = reset($pages);
-        $categories = array_map(fn($c) => str_replace('Category:', '', $c['title']), $page['categories'] ?? []);
 
-        $topicTerms = $this->mapCategoriesToTopics($categories);
-        $eraTermId = $this->mapCategoriesToEra($categories);
-        $regionTermId = $this->mapCategoriesToRegion($categories);
+        foreach ($pages as $page) {
+          $pageTitle = $page['title'] ?? '';
+          $node = $toProcess[$pageTitle] ?? NULL;
+          if (!$node) continue;
 
-        if (!empty($topicTerms)) {
-          $node->set('field_topics', array_map(fn($id) => ['target_id' => $id], $topicTerms));
-        }
-        if ($eraTermId) {
-          $node->set('field_era', ['target_id' => $eraTermId]);
-        }
-        if ($regionTermId) {
-          $node->set('field_region', ['target_id' => $regionTermId]);
-        }
-        $node->save();
+          $categories = array_map(fn($c) => str_replace('Category:', '', $c['title']), $page['categories'] ?? []);
 
-        usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+          $topicTerms = $this->mapCategoriesToTopics($categories, $topicTermIds);
+          $eraTermId = $this->mapCategoriesToEra($categories, $eraTermIds);
+          $regionTermId = $this->mapCategoriesToRegion($categories, $regionTermIds);
+
+          if (!empty($topicTerms)) {
+            $node->set('field_topics', array_map(fn($id) => ['target_id' => $id], $topicTerms));
+          }
+          if ($eraTermId) {
+            $node->set('field_era', ['target_id' => $eraTermId]);
+          }
+          if ($regionTermId) {
+            $node->set('field_region', ['target_id' => $regionTermId]);
+          }
+          $node->save();
+          $processed++;
+        }
+
+        usleep(350 * 1000);
       }
+
       $nodeStorage->resetCache($chunk);
+
+      $count = ($chunkIdx + 1) * self::BATCH_SIZE;
+      if ($count % 500 === 0 || $count >= $total) {
+        $this->output()->writeln(sprintf('  [%d/%d] processed: %d (skipped: %d)', min($count, $total), $total, $processed, $skipped));
+        flush();
+      }
     }
 
-    $this->output()->writeln('<info>Category import complete.</info>');
+    $this->output()->writeln(sprintf('<info>Category import complete. Processed: %d, skipped: %d.</info>', $processed, $skipped));
   }
 
   /**
@@ -304,7 +347,7 @@ class AthenaeumImportCommands extends DrushCommands {
 
         usleep(self::RATE_LIMIT_DELAY_MS * 1000);
       }
-      $nodeStorage->resetCache();
+      $nodeStorage->resetCache($chunk);
       $this->output()->writeln(sprintf('  [%d/%d] updated: %d', $count, $total, $updated));
     }
 
@@ -617,8 +660,10 @@ class AthenaeumImportCommands extends DrushCommands {
     return $this->fileRepository->writeData($imageData, $destination, \Drupal\Core\File\FileExists::Replace);
   }
 
-  protected function mapCategoriesToTopics(array $categories): array {
-    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+  protected function mapCategoriesToTopics(array $categories, array $topicTermIds = []): array {
+    if (empty($topicTermIds)) {
+      $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+    }
 
     // Keyword-to-topic map. Keys are matched as whole words against the
     // lower-cased category name after stripping the "Category:" prefix and
@@ -687,16 +732,25 @@ class AthenaeumImportCommands extends DrushCommands {
 
     $termIds = [];
     foreach (array_keys($matchedTopics) as $topicName) {
-      $terms = $termStorage->loadByProperties(['name' => $topicName, 'vid' => 'topics']);
-      if ($term = reset($terms)) {
-        $termIds[] = $term->id();
+      if (!empty($topicTermIds)) {
+        if (isset($topicTermIds[$topicName])) {
+          $termIds[] = $topicTermIds[$topicName];
+        }
+      }
+      else {
+        $terms = $termStorage->loadByProperties(['name' => $topicName, 'vid' => 'topics']);
+        if ($term = reset($terms)) {
+          $termIds[] = $term->id();
+        }
       }
     }
     return array_unique($termIds);
   }
 
-  protected function mapCategoriesToEra(array $categories): ?int {
-    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+  protected function mapCategoriesToEra(array $categories, array $eraTermIds = []): ?int {
+    if (empty($eraTermIds)) {
+      $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+    }
     $eraMap = [
       'Ancient (before 500 CE)' => ['ancient', 'classical antiquity', 'roman empire', 'bc ', 'bce', 'greek antiquity', 'bronze age', 'iron age', 'egypt', 'mesopotamia'],
       'Medieval (500–1500)' => ['medieval', 'middle ages', 'byzantine', 'crusades', 'feudal', 'viking', '10th century', '11th century', '12th century', '13th century', '14th century', '15th century'],
@@ -709,18 +763,26 @@ class AthenaeumImportCommands extends DrushCommands {
     foreach ($eraMap as $eraName => $keywords) {
       foreach ($keywords as $kw) {
         if (str_contains($catsStr, $kw)) {
+          if (!empty($eraTermIds)) {
+            return $eraTermIds[$eraName] ?? NULL;
+          }
           $terms = $termStorage->loadByProperties(['name' => $eraName, 'vid' => 'era']);
           if ($term = reset($terms)) return $term->id();
         }
       }
+    }
+    if (!empty($eraTermIds)) {
+      return $eraTermIds['Timeless'] ?? NULL;
     }
     $terms = $termStorage->loadByProperties(['name' => 'Timeless', 'vid' => 'era']);
     if ($term = reset($terms)) return $term->id();
     return NULL;
   }
 
-  protected function mapCategoriesToRegion(array $categories): ?int {
-    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+  protected function mapCategoriesToRegion(array $categories, array $regionTermIds = []): ?int {
+    if (empty($regionTermIds)) {
+      $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+    }
     $regionMap = [
       'Africa' => ['africa', 'african', 'egypt', 'ethiopia', 'nigeria', 'kenya', 'zimbabwe', 'ghana', 'sudan'],
       'Americas' => ['america', 'united states', 'canada', 'mexico', 'brazil', 'latin america', 'caribbean', 'argentina', 'chile'],
@@ -736,10 +798,16 @@ class AthenaeumImportCommands extends DrushCommands {
     foreach ($regionMap as $regionName => $keywords) {
       foreach ($keywords as $kw) {
         if (str_contains($catsStr, $kw)) {
+          if (!empty($regionTermIds)) {
+            return $regionTermIds[$regionName] ?? NULL;
+          }
           $terms = $termStorage->loadByProperties(['name' => $regionName, 'vid' => 'region']);
           if ($term = reset($terms)) return $term->id();
         }
       }
+    }
+    if (!empty($regionTermIds)) {
+      return $regionTermIds['Not Geographic'] ?? NULL;
     }
     $terms = $termStorage->loadByProperties(['name' => 'Not Geographic', 'vid' => 'region']);
     if ($term = reset($terms)) return $term->id();
@@ -750,12 +818,10 @@ class AthenaeumImportCommands extends DrushCommands {
     $titles = [];
     // Match the "See also" section between its h2 and the next h2 (or end of string).
     if (preg_match('/<h2[^>]*>\s*(?:<span[^>]*>)?See also(?:<\/span>)?\s*<\/h2>(.*?)(?=<h2|$)/si', $html, $section)) {
-      // Extract /wiki/ hrefs — standard Wikipedia article links.
-      preg_match_all('/<a\s[^>]*href="\/wiki\/([^"#]+)"[^>]*>/i', $section[1], $matches);
-      foreach ($matches[1] as $slug) {
-        // Skip special namespaces (File:, Template:, Help:, etc.).
-        if (str_contains($slug, ':')) continue;
-        $titles[] = str_replace('_', ' ', urldecode($slug));
+      // Body HTML uses data-wiki-link attributes added during import to track article references.
+      preg_match_all('/data-wiki-link="([^"]+)"/i', $section[1], $matches);
+      foreach ($matches[1] as $link) {
+        $titles[] = str_replace('_', ' ', urldecode($link));
       }
     }
     return $titles;

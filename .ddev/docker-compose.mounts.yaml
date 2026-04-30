@@ -1,4 +1,1 @@
-services:
-  web:
-    volumes:
-      - "${HOME}/devel/tag1/scolta/packages:/mnt/packages"
+services: {}

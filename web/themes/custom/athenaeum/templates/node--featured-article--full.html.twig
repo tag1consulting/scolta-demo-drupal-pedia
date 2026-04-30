@@ -16,7 +16,13 @@
         <h1 class="article-header__title">{{ node.label }}</h1>
 
         <div class="article-meta">
-          {% if content.field_topics %}
+          {% if topic_list %}
+            <div class="article-meta__item">
+              {% for topic in topic_list %}
+                <a href="{{ topic.url }}" class="topic-badge">{{ topic.name }}</a>
+              {% endfor %}
+            </div>
+          {% elseif content.field_topics %}
             <div class="article-meta__item">
               {% for topic in node.field_topics %}
                 <span class="topic-badge">{{ topic.entity.name.value }}</span>

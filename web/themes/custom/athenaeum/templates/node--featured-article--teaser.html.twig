@@ -31,9 +31,15 @@
     {% endif %}
 
     <div class="article-card__meta">
-      {% for topic in node.field_topics %}
-        <span class="topic-badge">{{ topic.entity.name.value }}</span>
-      {% endfor %}
+      {% if topic_list %}
+        {% for topic in topic_list %}
+          <a href="{{ topic.url }}" class="topic-badge">{{ topic.name }}</a>
+        {% endfor %}
+      {% else %}
+        {% for topic in node.field_topics %}
+          <span class="topic-badge">{{ topic.entity.name.value }}</span>
+        {% endfor %}
+      {% endif %}
     </div>
   </div>
 

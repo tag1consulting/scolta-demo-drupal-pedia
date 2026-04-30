@@ -418,6 +418,15 @@ p { margin: 0 0 1.1em; }
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  text-decoration: none;
+  display: inline-block;
+}
+
+a.topic-badge:hover {
+  background: var(--color-burgundy);
+  color: #fff;
+  border-color: var(--color-burgundy);
+  text-decoration: none;
 }
 
 /* ============================================================
