@@ -1,5 +1,9 @@
 <?php
 
+if ($memory_limit = getenv('PHP_MEMORY_LIMIT_OVERRIDE')) {
+  ini_set('memory_limit', $memory_limit);
+}
+
 // Database configuration
 $databases['default']['default'] = [
   'database' => getenv("DB_NAME"),
