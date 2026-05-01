@@ -30,18 +30,18 @@ hooks:
           curl -L --progress-bar -o db/dump.sql.gz "$DOWNLOAD_URL"
           echo "Download complete."
         fi
-    - exec: composer install --no-interaction
-    - exec: |
-        if [ -f /var/www/html/db/dump.sql.gz ]; then
-          echo "Importing database..."
-          zcat /var/www/html/db/dump.sql.gz | mysql -u root -proot db
-          drush cache:rebuild
-          echo "Database imported and caches cleared."
-          echo "Building Scolta search index..."
-          mkdir -p /var/www/html/web/sites/default/private
-          drush scolta:build
-          echo "Search index built."
+    - exec-host: |
+        if [ -f db/dump.sql.gz ] && [ ! -f db/.imported ]; then
+          echo "Importing database (this takes a few minutes)..."
+          ddev import-db --file=db/dump.sql.gz
+          echo "Rebuilding caches and building Scolta search index..."
+          mkdir -p web/sites/default/private
+          ddev drush cache:rebuild
+          ddev drush scolta:build
+          touch db/.imported
+          echo "Setup complete."
         fi
+    - exec: composer install --no-interaction
 
 web_environment:
   - SCOLTA_API_KEY=SCOLTA_API_KEY_PLACEHOLDER
