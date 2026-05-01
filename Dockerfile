@@ -154,6 +154,7 @@ COPY --from=composer /app .
 
 RUN /var/www/html/scripts/download-db.sh
 
+RUN /var/www/html/scripts/download-images.sh
 RUN ln -sf /var/www/html/web/sites/default/instances/docker/settings.local.php web/sites/default/settings.local.php && \
     ln -sf /var/www/html/vendor/drush/drush/drush /usr/local/bin/drush && \
     ln -sf /var/www/html/vendor/drush/drush/drush.php /usr/local/bin/drush.php
