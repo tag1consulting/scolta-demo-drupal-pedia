@@ -24,7 +24,7 @@ hooks:
           drush scolta:build
           echo "Search index built."
         else
-          echo "No database dump found, skipping import."
+          echo "WARNING: db/dump.sql.gz not found. Run ./scripts/download-db.sh to download the database dump (~586 MB)."
         fi
 
 web_environment:

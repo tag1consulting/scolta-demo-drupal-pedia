@@ -5,8 +5,9 @@ A Drupal 11 encyclopedia site built from Wikipedia's ~6,000 Featured Articles â€
 ## Quick Start
 
 ```bash
-git clone <repo-url> the-athenaeum
+git clone https://github.com/tag1consulting/scolta-demo-drupal-pedia.git the-athenaeum
 cd the-athenaeum
+./scripts/download-db.sh   # downloads the 586 MB database dump from GitHub Releases
 ddev start
 ```
 
@@ -17,6 +18,8 @@ DDEV will automatically:
 4. Clear Drupal caches
 
 Then visit: **https://the-athenaeum.ddev.site**
+
+> **Note:** The database dump is hosted as a [GitHub Release asset](https://github.com/tag1consulting/scolta-demo-drupal-pedia/releases/latest) rather than committed to git because it exceeds GitHub's 100 MB file size limit. You only need to download it once.
 
 Admin: https://the-athenaeum.ddev.site/user â€” username: `admin`, password: `admin`
 
