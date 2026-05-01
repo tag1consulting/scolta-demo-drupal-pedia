@@ -152,6 +152,8 @@ RUN a2enmod rewrite remoteip
 # Copy site from composer output
 COPY --from=composer /app .
 
+RUN /app/scripts/download-db.sh
+
 RUN ln -sf /app/web/sites/default/instances/docker/settings.local.php web/sites/default/settings.local.php && \
     ln -sf /app/vendor/drush/drush/drush /usr/local/bin/drush && \
     ln -sf /app/vendor/drush/drush/drush.php /usr/local/bin/drush.php
