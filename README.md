@@ -7,19 +7,17 @@ A Drupal 11 encyclopedia site built from Wikipedia's ~6,000 Featured Articles â€
 ```bash
 git clone https://github.com/tag1consulting/scolta-demo-drupal-pedia.git the-athenaeum
 cd the-athenaeum
-./scripts/download-db.sh   # downloads the 586 MB database dump from GitHub Releases
 ddev start
 ```
 
-DDEV will automatically:
-1. Run `composer install`
-2. Import the database (`db/dump.sql.gz`)
-3. Build the Scolta search index
-4. Clear Drupal caches
+`ddev start` will automatically:
+1. Download the database dump (~586 MB, one-time, from GitHub Releases)
+2. Run `composer install`
+3. Import the database
+4. Build the Scolta search index
+5. Clear Drupal caches
 
 Then visit: **https://the-athenaeum.ddev.site**
-
-> **Note:** The database dump is hosted as a [GitHub Release asset](https://github.com/tag1consulting/scolta-demo-drupal-pedia/releases/latest) rather than committed to git because it exceeds GitHub's 100 MB file size limit. You only need to download it once.
 
 Admin: https://the-athenaeum.ddev.site/user â€” username: `admin`, password: `admin`
 
