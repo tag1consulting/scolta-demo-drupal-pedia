@@ -5,7 +5,6 @@
     "license": "GPL-2.0-or-later",
     "require": {
         "composer/installers": "^2.0",
-        "cweagans/composer-patches": "^1.7",
         "drupal/core-composer-scaffold": "^11",
         "drupal/core-project-message": "^11",
         "drupal/core-recommended": "^11",
@@ -13,8 +12,8 @@
         "drupal/pathauto": "^1.12",
         "drupal/search_api": "^1.0",
         "drush/drush": "^13",
-        "tag1/scolta-drupal": "0.3.8",
-        "tag1/scolta-php": "0.3.8"
+        "tag1/scolta-drupal": "0.3.9",
+        "tag1/scolta-php": "0.3.9"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
@@ -41,7 +40,6 @@
     "config": {
         "allow-plugins": {
             "composer/installers": true,
-            "cweagans/composer-patches": true,
             "drupal/core-composer-scaffold": true,
             "drupal/core-project-message": true,
             "phpstan/extension-installer": true,
@@ -84,11 +82,6 @@
             "web/themes/custom/{$name}": [
                 "type:drupal-custom-theme"
             ]
-        },
-        "patches": {
-            "tag1/scolta-drupal": {
-                "Fix strip_tags(FilteredMarkup) TypeError — remove with 0.3.9": "patches/scolta-drupal-filteredmarkup-fix.patch"
-            }
         },
         "drupal-core-project-message": {
             "include-keys": [
