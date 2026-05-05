@@ -12,8 +12,8 @@
         "drupal/pathauto": "^1.12",
         "drupal/search_api": "^1.0",
         "drush/drush": "^13",
-        "tag1/scolta-drupal": "0.3.9",
-        "tag1/scolta-php": "0.3.9"
+        "tag1/scolta-drupal": "0.3.10",
+        "tag1/scolta-php": "0.3.10"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
@@ -25,6 +25,14 @@
         "drupal": {
             "type": "composer",
             "url": "https://packages.drupal.org/8"
+        },
+        "scolta-php": {
+            "type": "vcs",
+            "url": "https://github.com/tag1consulting/scolta-php"
+        },
+        "scolta-drupal": {
+            "type": "vcs",
+            "url": "https://github.com/tag1consulting/scolta-drupal"
         }
     },
     "minimum-stability": "dev",
