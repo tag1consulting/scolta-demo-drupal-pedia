@@ -875,13 +875,16 @@ $settings['migrate_node_migrate_type_classic'] = FALSE;
 # $settings['migrate_file_public_path'] = '';
 # $settings['migrate_file_private_path'] = '';
 
+// Disable automated cron to prevent page-load hangs in demo environments.
+$settings['automated_cron_threshold'] = 0;
+
+// Increase memory limit to handle large Wikipedia content indexing.
+ini_set('memory_limit', '512M');
+
 // Automatically generated include for settings managed by ddev.
 if (getenv('IS_DDEV_PROJECT') == 'true' && file_exists(__DIR__ . '/settings.ddev.php')) {
   include __DIR__ . '/settings.ddev.php';
 }
-
-// Private file system for Scolta Pagefind build artifacts.
-$settings['file_private_path'] = '/var/www/html/web/sites/default/private';
 
 /**
  * Load local development override configuration, if available.
@@ -897,9 +900,6 @@ $settings['file_private_path'] = '/var/www/html/web/sites/default/private';
  * Keep this code block at the end of this file to take full effect.
  */
 #
-if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
-  include $app_root . '/' . $site_path . '/settings.local.php';
-}
-
-// The Athenaeum: Use version-controlled config sync directory.
-$settings['config_sync_directory'] = '../config/sync';
+# if (file_exists($app_root . '/' . $site_path . '/settings.local.php')) {
+#   include $app_root . '/' . $site_path . '/settings.local.php';
+# }

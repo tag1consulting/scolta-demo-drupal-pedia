@@ -70,9 +70,16 @@
         </div>
       {% endif %}
 
-      {# Lead / summary — skip if it's Wikipedia CSS rather than real text #}
-      {% set lead_raw = (node.field_lead.value is not iterable ? node.field_lead.value : '')|default('')|striptags %}
-      {% if lead_raw and lead_raw[:15] != '.mw-parser-outp' and lead_raw[:3] != '@me' %}
+      {# Lead / summary — skip Wikipedia CSS, infobox table dumps, and other non-prose #}
+      {% set lead_raw = (node.field_lead.value is not iterable ? node.field_lead.value : '')|default('')|striptags|trim %}
+      {% set lead_first_line = lead_raw|split('\n')|first|trim %}
+      {% if lead_raw
+          and lead_raw[:15] != '.mw-parser-outp'
+          and lead_raw[:3] != '@me'
+          and lead_first_line != node.label
+          and 'Kingdom:' not in lead_raw
+          and 'Scientific classification' not in lead_raw
+          and lead_first_line|length > 60 %}
         <div class="article-lead">{{ lead_raw }}</div>
       {% endif %}
 
