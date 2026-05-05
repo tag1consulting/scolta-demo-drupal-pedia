@@ -13,22 +13,40 @@ database:
 hooks:
   post-start:
     - exec-host: |
+        RELEASE_JSON=$(curl -s "https://api.github.com/repos/tag1consulting/scolta-demo-drupal-pedia/releases/latest")
         if [ ! -f db/dump.sql.gz ]; then
           echo ""
           echo "┌─────────────────────────────────────────────────────┐"
-          echo "│  Downloading database dump (~586 MB) — please wait  │"
+          echo "│  Downloading database dump (~490 MB) — please wait  │"
           echo "│  This is a one-time download and may take minutes.  │"
           echo "└─────────────────────────────────────────────────────┘"
           mkdir -p db
-          DOWNLOAD_URL=$(curl -s "https://api.github.com/repos/tag1consulting/scolta-demo-drupal-pedia/releases/latest" \
-              | grep -o "https://[^\"]*dump\.sql\.gz[^\"]*" | head -1)
+          DOWNLOAD_URL=$(echo "$RELEASE_JSON" | grep -o "https://[^\"]*dump\.sql\.gz[^\"]*" | head -1)
           if [ -z "$DOWNLOAD_URL" ]; then
             echo "ERROR: Could not find dump.sql.gz in the latest GitHub release."
             echo "Download manually: https://github.com/tag1consulting/scolta-demo-drupal-pedia/releases/latest"
             exit 1
           fi
           curl -L --progress-bar -o db/dump.sql.gz "$DOWNLOAD_URL"
-          echo "Download complete."
+          echo "Database dump downloaded."
+        fi
+        if [ ! -d web/sites/default/files/article-images ] || [ -z "$(ls -A web/sites/default/files/article-images 2>/dev/null)" ]; then
+          echo ""
+          echo "┌──────────────────────────────────────────────────────────┐"
+          echo "│  Downloading article images (~1.6 GB) — please wait      │"
+          echo "│  This is a one-time download and may take several minutes │"
+          echo "└──────────────────────────────────────────────────────────┘"
+          mkdir -p web/sites/default/files
+          IMAGES_URL=$(echo "$RELEASE_JSON" | grep -o "https://[^\"]*article-images\.tar\.gz[^\"]*" | head -1)
+          if [ -z "$IMAGES_URL" ]; then
+            echo "ERROR: Could not find article-images.tar.gz in the latest GitHub release."
+            echo "Download manually: https://github.com/tag1consulting/scolta-demo-drupal-pedia/releases/latest"
+            exit 1
+          fi
+          curl -L --progress-bar -o /tmp/article-images.tar.gz "$IMAGES_URL"
+          tar -xzf /tmp/article-images.tar.gz -C web/sites/default/files/
+          rm /tmp/article-images.tar.gz
+          echo "Article images downloaded and extracted."
         fi
     - exec: composer install --no-interaction
     - exec-host: |
