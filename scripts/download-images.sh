@@ -30,5 +30,15 @@ curl -L --progress-bar -o "$TARBALL" "$DOWNLOAD_URL"
 tar -xzf "$TARBALL" -C "$EXTRACT_TO"
 rm "$TARBALL"
 
-echo "Extracted to $IMAGES_DIR ($(du -sh "$IMAGES_DIR" | cut -f1))"
+IMAGE_COUNT=$(ls -1 "$IMAGES_DIR" | wc -l | tr -d ' ')
+echo "Extracted to $IMAGES_DIR ($IMAGE_COUNT files, $(du -sh "$IMAGES_DIR" | cut -f1))"
+
+# Sanity check: the release asset should contain all article lead images.
+MIN_IMAGES=1900
+if [ "$IMAGE_COUNT" -lt "$MIN_IMAGES" ]; then
+    echo "ERROR: Expected at least $MIN_IMAGES article images, found only $IMAGE_COUNT."
+    echo "The release asset may be incomplete. Check: https://github.com/$REPO/releases"
+    exit 1
+fi
+
 echo "Run 'ddev start' to import the database and rebuild the search index."
