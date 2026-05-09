@@ -57,6 +57,7 @@ RUN composer install --no-ansi --no-dev --no-interaction --no-progress --optimiz
 FROM php-base
 
 ARG PHP_VERSION
+ARG PAGEFIND_VERSION=1.5.2
 
 ENV OPCACHE_MAX_FILES=4000
 ENV OPCACHE_MEMORY_CONSUMPTION=128
@@ -81,6 +82,10 @@ RUN apt-get update && \
       default-mysql-client \
       tini && \
     rm -rf /var/lib/apt/lists/*
+
+RUN curl -sL "https://github.com/CloudCannon/pagefind/releases/download/v${PAGEFIND_VERSION}/pagefind-v${PAGEFIND_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+    | tar -xz -C /usr/local/bin pagefind \
+    && chmod +x /usr/local/bin/pagefind
 
 # Read XFF headers, note this is insecure if you are not sanitizing
 # XFF in front of the container
