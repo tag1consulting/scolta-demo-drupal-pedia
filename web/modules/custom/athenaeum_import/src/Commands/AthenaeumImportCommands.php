@@ -794,9 +794,32 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   protected function downloadImage(string $url, string $title): mixed {
-    $ctx = stream_context_create(['http' => ['header' => 'User-Agent: ' . self::USER_AGENT, 'timeout' => 30]]);
-    $imageData = @file_get_contents($url, FALSE, $ctx);
-    if (!$imageData) return NULL;
+    $ctx = stream_context_create(['http' => [
+      'header' => 'User-Agent: ' . self::USER_AGENT,
+      'timeout' => 30,
+      'ignore_errors' => TRUE,
+    ]]);
+
+    // Retry up to 3 times with increasing backoff on Wikimedia 429 responses.
+    $imageData = FALSE;
+    foreach ([0, 3, 8] as $delaySecs) {
+      if ($delaySecs > 0) {
+        sleep($delaySecs);
+      }
+      $imageData = @file_get_contents($url, FALSE, $ctx);
+      if ($imageData === FALSE) {
+        break;
+      }
+      $statusLine = ($http_response_header ?? [''])[0];
+      if (strpos($statusLine, '429') === FALSE) {
+        break;
+      }
+      $imageData = FALSE;
+    }
+
+    if (!$imageData) {
+      return NULL;
+    }
 
     $ext = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'jpg';
     $safeTitle = preg_replace('/[^a-zA-Z0-9_-]/', '-', strtolower($title));
