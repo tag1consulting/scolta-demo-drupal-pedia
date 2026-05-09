@@ -59,4 +59,31 @@ for img in "${SAMPLE_IMAGES[@]}"; do
 done
 echo "==> Sample images OK"
 
+echo "==> Verifying search index metadata..."
+# The full pagefind index (~232 MB) is too large to store in git; only the
+# pagefind-entry.json metadata file is committed so CI can confirm the index
+# was built with the correct page count.
+PAGEFIND_ENTRY_URL="http://localhost:${PORT}/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json"
+MIN_PAGES=5000
+
+META_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PAGEFIND_ENTRY_URL" 2>/dev/null || true)
+if [ "$META_CODE" != "200" ]; then
+  echo "FAIL: Pagefind index metadata not found at $PAGEFIND_ENTRY_URL (HTTP $META_CODE)"
+  exit 1
+fi
+echo "PASS: Pagefind index metadata served (HTTP 200)"
+
+PAGE_COUNT=$(curl -s "$PAGEFIND_ENTRY_URL" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+counts = [d['languages'][l]['page_count'] for l in d.get('languages', {})]
+print(max(counts) if counts else 0)
+" 2>/dev/null || echo "0")
+
+if [ "$PAGE_COUNT" -lt "$MIN_PAGES" ]; then
+  echo "FAIL: Only $PAGE_COUNT pages indexed (minimum: $MIN_PAGES)"
+  exit 1
+fi
+echo "PASS: $PAGE_COUNT pages indexed (minimum: $MIN_PAGES)"
+
 echo "==> All checks passed"
