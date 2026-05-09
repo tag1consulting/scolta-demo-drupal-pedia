@@ -56,6 +56,7 @@ hooks:
           echo "Rebuilding caches and building Scolta search index..."
           mkdir -p web/sites/default/private
           ddev drush cache:rebuild
+          ddev drush php:script /var/www/html/scripts/setup-about-page.php
           ddev drush scolta:build
           touch db/.imported
           echo "Setup complete."
