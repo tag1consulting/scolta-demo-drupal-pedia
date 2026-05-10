@@ -62,7 +62,4 @@ hooks:
           echo "Setup complete."
         fi
 
-web_environment:
-  - SCOLTA_API_KEY=SCOLTA_API_KEY_PLACEHOLDER
-
 additional_fqdns: []
