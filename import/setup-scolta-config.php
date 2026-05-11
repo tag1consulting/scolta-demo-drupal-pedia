@@ -48,7 +48,7 @@ $config->setData([
   'prompt_expand_query' => '',
   'prompt_summarize' => '',
   'prompt_follow_up' => '',
-  'indexer' => 'auto',
+  'indexer' => 'php',
   'memory_budget' => [
     'profile' => 'conservative',
     'custom_bytes' => NULL,
