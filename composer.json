@@ -12,8 +12,8 @@
         "drupal/pathauto": "^1.12",
         "drupal/search_api": "^1.0",
         "drush/drush": "^13",
-        "tag1/scolta-drupal": "^1.0.0-rc1",
-        "tag1/scolta-php": "^1.0.0-rc1"
+        "tag1/scolta-drupal": "^1.0.0-rc2",
+        "tag1/scolta-php": "^1.0.0-rc2"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
@@ -35,16 +35,17 @@
             "url": "https://github.com/tag1consulting/scolta-drupal"
         }
     },
-    "minimum-stability": "RC",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
             "composer/installers": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
             "drupal/core-composer-scaffold": true,
             "drupal/core-project-message": true,
+            "php-http/discovery": true,
             "phpstan/extension-installer": true,
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "php-http/discovery": true
+            "tbachert/spi": true
         },
         "sort-packages": true
     },
