@@ -12,8 +12,8 @@
         "drupal/pathauto": "^1.12",
         "drupal/search_api": "^1.0",
         "drush/drush": "^13",
-        "tag1/scolta-drupal": "dev-main",
-        "tag1/scolta-php": "dev-main"
+        "tag1/scolta-drupal": "^1.0.0",
+        "tag1/scolta-php": "^1.0.0"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
