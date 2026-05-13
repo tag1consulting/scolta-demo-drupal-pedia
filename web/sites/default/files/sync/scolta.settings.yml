@@ -23,6 +23,7 @@ scoring:
   custom_stop_words: {  }
   recency_strategy: exponential
   recency_curve: {  }
+  max_pagefind_results: '50'
 display:
   excerpt_length: 350
   results_per_page: 12
