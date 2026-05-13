@@ -72,7 +72,8 @@ ENV PHP_MAX_INPUT_VARS=1500
 ENV HTTPD_START_SERVERS=5
 ENV HTTPD_MIN_SPARE_SERVERS=5
 ENV HTTPD_MAX_SPARE_SERVERS=10
-ENV HTTPD_MAX_REQUEST_WORKERS=50
+ENV HTTPD_SERVER_LIMIT=300
+ENV HTTPD_MAX_REQUEST_WORKERS=300
 ENV HTTPD_MAX_CONNECTIONS_PER_CHILD=2000
 
 WORKDIR /var/www/html
@@ -107,6 +108,7 @@ RUN { \
     echo '    StartServers           ${HTTPD_START_SERVERS}'; \
     echo '    MinSpareServers        ${HTTPD_MIN_SPARE_SERVERS}'; \
     echo '    MaxSpareServers        ${HTTPD_MAX_SPARE_SERVERS}'; \
+    echo '    ServerLimit            ${HTTPD_SERVER_LIMIT}'; \
     echo '    MaxRequestWorkers      ${HTTPD_MAX_REQUEST_WORKERS}'; \
     echo '    MaxConnectionsPerChild ${HTTPD_MAX_CONNECTIONS_PER_CHILD}'; \
     echo '</IfModule>'; \
