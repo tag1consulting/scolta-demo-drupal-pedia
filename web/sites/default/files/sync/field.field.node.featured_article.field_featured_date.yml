@@ -1,0 +1,21 @@
+uuid: 57c773af-1f51-4664-ac58-2cc99b9c1341
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_featured_date
+    - node.type.featured_article
+  module:
+    - datetime
+id: node.featured_article.field_featured_date
+field_name: field_featured_date
+entity_type: node
+bundle: featured_article
+label: 'Featured Date'
+description: 'Date this article was featured on Wikipedia.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: datetime

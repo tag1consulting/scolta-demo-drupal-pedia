@@ -1,0 +1,11 @@
+uuid: b25acfd2-da62-4f7e-a8ff-dbed6bff37ca
+langcode: en
+status: true
+dependencies: {  }
+name: 'Topic Landing Page'
+type: topic_landing_page
+description: 'Auto-generated hub page for a top-level topic area.'
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: true

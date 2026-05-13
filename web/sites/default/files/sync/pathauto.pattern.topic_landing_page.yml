@@ -1,0 +1,21 @@
+uuid: 5656cbf1-bde7-4db4-8a63-4cbd414641d0
+langcode: en
+status: true
+dependencies:
+  module:
+    - node
+id: topic_landing_page
+label: 'Topic Landing Pages'
+type: 'canonical_entities:node'
+pattern: '/topic/[node:title]'
+selection_criteria:
+  node_type:
+    id: 'entity_bundle:node'
+    negate: false
+    context_mapping:
+      node: node
+    bundles:
+      topic_landing_page: topic_landing_page
+selection_logic: and
+weight: 0
+relationships: {  }

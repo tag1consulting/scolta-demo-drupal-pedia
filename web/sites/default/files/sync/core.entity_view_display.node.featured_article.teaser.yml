@@ -1,0 +1,79 @@
+uuid: bab1fba5-4563-41f5-98d1-279856a0cdc8
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.node.teaser
+    - field.field.node.featured_article.body
+    - field.field.node.featured_article.field_coordinates
+    - field.field.node.featured_article.field_era
+    - field.field.node.featured_article.field_featured_date
+    - field.field.node.featured_article.field_image
+    - field.field.node.featured_article.field_image_credit
+    - field.field.node.featured_article.field_infobox_data
+    - field.field.node.featured_article.field_lead
+    - field.field.node.featured_article.field_original_url
+    - field.field.node.featured_article.field_reference_count
+    - field.field.node.featured_article.field_region
+    - field.field.node.featured_article.field_related_articles
+    - field.field.node.featured_article.field_topics
+    - field.field.node.featured_article.field_why_it_matters
+    - field.field.node.featured_article.field_wikipedia_pageid
+    - field.field.node.featured_article.field_word_count
+    - image.style.medium
+    - node.type.featured_article
+  module:
+    - image
+    - text
+    - user
+id: node.featured_article.teaser
+targetEntityType: node
+bundle: featured_article
+mode: teaser
+content:
+  field_image:
+    type: image
+    label: hidden
+    settings:
+      image_link: content
+      image_style: medium
+      image_loading:
+        attribute: lazy
+    third_party_settings: {  }
+    weight: 1
+    region: content
+  field_lead:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_topics:
+    type: entity_reference_label
+    label: hidden
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 10
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden:
+  body: true
+  field_coordinates: true
+  field_era: true
+  field_featured_date: true
+  field_image_credit: true
+  field_infobox_data: true
+  field_original_url: true
+  field_reference_count: true
+  field_region: true
+  field_related_articles: true
+  field_why_it_matters: true
+  field_wikipedia_pageid: true
+  field_word_count: true
+  search_api_excerpt: true

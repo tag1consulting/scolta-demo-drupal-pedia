@@ -1,0 +1,9 @@
+uuid: 1b3f23b2-8fd3-492e-bc98-9c27c83d7668
+langcode: en
+status: true
+dependencies: {  }
+name: Region
+vid: region
+description: 'Geographic classification of article subjects'
+weight: 0
+new_revision: false

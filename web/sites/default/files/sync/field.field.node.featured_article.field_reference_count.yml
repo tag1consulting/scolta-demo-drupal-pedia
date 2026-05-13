@@ -1,0 +1,23 @@
+uuid: 79863060-b343-4b2c-95c1-596a626174c8
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_reference_count
+    - node.type.featured_article
+id: node.featured_article.field_reference_count
+field_name: field_reference_count
+entity_type: node
+bundle: featured_article
+label: 'Reference Count'
+description: 'Number of citations in the original Wikipedia article.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  min: null
+  max: null
+  prefix: ''
+  suffix: ''
+field_type: integer

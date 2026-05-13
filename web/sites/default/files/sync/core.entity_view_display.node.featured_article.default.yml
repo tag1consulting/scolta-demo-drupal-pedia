@@ -1,0 +1,126 @@
+uuid: bd87bafc-4120-473f-8489-f721640c5b01
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.featured_article.body
+    - field.field.node.featured_article.field_coordinates
+    - field.field.node.featured_article.field_era
+    - field.field.node.featured_article.field_featured_date
+    - field.field.node.featured_article.field_image
+    - field.field.node.featured_article.field_image_credit
+    - field.field.node.featured_article.field_infobox_data
+    - field.field.node.featured_article.field_lead
+    - field.field.node.featured_article.field_original_url
+    - field.field.node.featured_article.field_reference_count
+    - field.field.node.featured_article.field_region
+    - field.field.node.featured_article.field_related_articles
+    - field.field.node.featured_article.field_topics
+    - field.field.node.featured_article.field_why_it_matters
+    - field.field.node.featured_article.field_wikipedia_pageid
+    - field.field.node.featured_article.field_word_count
+    - image.style.large
+    - node.type.featured_article
+  module:
+    - datetime
+    - image
+    - link
+    - text
+    - user
+id: node.featured_article.default
+targetEntityType: node
+bundle: featured_article
+mode: default
+content:
+  body:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 10
+    region: content
+  field_era:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 16
+    region: content
+  field_featured_date:
+    type: datetime_default
+    label: inline
+    settings:
+      timezone_override: ''
+      format_type: medium
+    third_party_settings: {  }
+    weight: 18
+    region: content
+  field_image:
+    type: image
+    label: hidden
+    settings:
+      image_link: ''
+      image_style: large
+      image_loading:
+        attribute: lazy
+    third_party_settings: {  }
+    weight: 3
+    region: content
+  field_lead:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 5
+    region: content
+  field_original_url:
+    type: link
+    label: inline
+    settings:
+      trim_length: 80
+      url_only: false
+      url_plain: false
+      rel: ''
+      target: _blank
+    third_party_settings: {  }
+    weight: 20
+    region: content
+  field_region:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: false
+    third_party_settings: {  }
+    weight: 17
+    region: content
+  field_related_articles:
+    type: entity_reference_label
+    label: above
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 25
+    region: content
+  field_topics:
+    type: entity_reference_label
+    label: inline
+    settings:
+      link: true
+    third_party_settings: {  }
+    weight: 15
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden:
+  field_coordinates: true
+  field_image_credit: true
+  field_infobox_data: true
+  field_reference_count: true
+  field_why_it_matters: true
+  field_wikipedia_pageid: true
+  field_word_count: true
+  search_api_excerpt: true
