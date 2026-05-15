@@ -1,4 +1,12 @@
 preset: content_catalog
+sortable_fields:
+  - word_count
+  - reference_count
+  - date
+sortable_field_descriptions:
+  word_count: 'Total number of words in the Wikipedia article (typically 2,000–15,000)'
+  reference_count: 'Number of citations and references in the Wikipedia article'
+  date: 'Date the article was added to the Wikipedia Featured Articles list'
 ai_provider: anthropic
 ai_model: claude-haiku-4-5-20251001
 ai_expansion_model: ''

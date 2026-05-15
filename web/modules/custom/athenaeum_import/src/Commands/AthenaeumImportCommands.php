@@ -738,6 +738,53 @@ class AthenaeumImportCommands extends DrushCommands {
     $this->output()->writeln(sprintf('<info>Done. Updated leads for %d articles.</info>', $fixed));
   }
 
+  /**
+   * Re-counts references in stored article body HTML and updates field_reference_count.
+   *
+   * Run after import if reference counts are 0 (e.g., field was added after initial import).
+   * Counts <li id="cite_note-..."> elements in the stored (already-cleaned) body HTML.
+   */
+  #[CLI\Command(name: 'athenaeum:enrich-reference-counts', aliases: ['ath-refcounts'])]
+  #[CLI\Usage(name: 'drush athenaeum:enrich-reference-counts', description: 'Re-count citations in stored article bodies and save to field_reference_count')]
+  public function enrichReferenceCounts(): void {
+    $this->output()->writeln('<info>Re-counting references in stored article bodies...</info>');
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->execute();
+
+    $total = count($nids);
+    $count = 0;
+    $updated = 0;
+    $zeroCount = 0;
+
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+      foreach ($nodes as $node) {
+        $count++;
+        $body = $node->get('body')->value ?? '';
+        if (empty($body)) {
+          continue;
+        }
+        $refCount = substr_count($body, '<li id="cite_note-');
+        $node->set('field_reference_count', $refCount);
+        $node->save();
+        $updated++;
+        if ($refCount === 0) {
+          $zeroCount++;
+        }
+      }
+      $nodeStorage->resetCache($chunk);
+      if ($count % 500 === 0) {
+        $this->output()->writeln(sprintf('  [%d/%d] updated: %d', $count, $total, $updated));
+      }
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. Updated reference counts for %d articles (%d with 0 refs).</info>', $updated, $zeroCount));
+  }
+
   protected function createArticleNode(array $data): void {
     $nodeStorage = $this->entityTypeManager->getStorage('node');
     $nodeStorage->create([
