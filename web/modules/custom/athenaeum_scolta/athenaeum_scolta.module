@@ -10,6 +10,9 @@
  * the Scolta module.
  */
 
+use Drupal\Core\Entity\FieldableEntityInterface;
+use Tag1\Scolta\Export\ContentItem;
+
 /**
  * Implements hook_theme().
  */
@@ -24,4 +27,28 @@ function athenaeum_scolta_theme($existing, $type, $theme, $path): array {
       ],
     ],
   ];
+}
+
+/**
+ * Implements hook_scolta_content_item_alter().
+ *
+ * Populates word_count and reference_count sortable fields from the
+ * featured_article content type's integer fields.
+ */
+function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, FieldableEntityInterface $entity): void {
+  if ($entity->bundle() !== 'featured_article') {
+    return;
+  }
+
+  $sortable = $item->sortable;
+
+  if ($entity->hasField('field_word_count') && !$entity->get('field_word_count')->isEmpty()) {
+    $sortable['word_count'] = (int) $entity->get('field_word_count')->value;
+  }
+
+  if ($entity->hasField('field_reference_count') && !$entity->get('field_reference_count')->isEmpty()) {
+    $sortable['reference_count'] = (int) $entity->get('field_reference_count')->value;
+  }
+
+  $item = $item->cloneWith(['sortable' => $sortable]);
 }
