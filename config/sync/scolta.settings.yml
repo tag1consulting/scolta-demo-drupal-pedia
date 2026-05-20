@@ -1,12 +1,4 @@
 preset: content_catalog
-sortable_fields:
-  - word_count
-  - reference_count
-  - date
-sortable_field_descriptions:
-  word_count: 'Total number of words in the Wikipedia article (typically 2,000–15,000)'
-  reference_count: 'Number of citations and references in the Wikipedia article'
-  date: 'Date the article was added to the Wikipedia Featured Articles list'
 ai_provider: anthropic
 ai_model: claude-haiku-4-5-20251001
 ai_expansion_model: ''
@@ -18,6 +10,12 @@ ai_languages:
 max_follow_ups: 3
 site_name: 'The Athenaeum'
 site_description: "Wikipedia's ~6,900 Featured Articles — the highest-quality encyclopedia entries spanning all domains of human knowledge. Search to discover unexpected connections across science, history, art, nature, and more."
+sortable_fields:
+  - word_count
+  - reference_count
+sortable_field_descriptions:
+  word_count: 'Total number of words in the Wikipedia article (typically 2,000–15,000)'
+  reference_count: 'Number of citations and references in the Wikipedia article'
 scoring:
   title_match_boost: 2.0
   title_all_terms_multiplier: 1.5
@@ -31,6 +29,7 @@ scoring:
   custom_stop_words: {  }
   recency_strategy: exponential
   recency_curve: {  }
+  max_pagefind_results: '50'
 display:
   excerpt_length: 350
   results_per_page: 12
