@@ -41,6 +41,7 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
   }
 
   $sortable = $item->sortable;
+  $filters = $item->filters;
 
   if ($entity->hasField('field_word_count') && !$entity->get('field_word_count')->isEmpty()) {
     $sortable['word_count'] = (int) $entity->get('field_word_count')->value;
@@ -50,5 +51,31 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
     $sortable['reference_count'] = (int) $entity->get('field_reference_count')->value;
   }
 
-  $item = $item->cloneWith(['sortable' => $sortable]);
+  if ($entity->hasField('field_topics') && !$entity->get('field_topics')->isEmpty()) {
+    $topics = [];
+    foreach ($entity->get('field_topics') as $ref) {
+      if ($ref->entity) {
+        $topics[] = $ref->entity->label();
+      }
+    }
+    if (!empty($topics)) {
+      $filters['topics'] = $topics;
+    }
+  }
+
+  if ($entity->hasField('field_era') && !$entity->get('field_era')->isEmpty()) {
+    $era = $entity->get('field_era')->entity;
+    if ($era) {
+      $filters['era'] = $era->label();
+    }
+  }
+
+  if ($entity->hasField('field_region') && !$entity->get('field_region')->isEmpty()) {
+    $region = $entity->get('field_region')->entity;
+    if ($region) {
+      $filters['region'] = $region->label();
+    }
+  }
+
+  $item = $item->cloneWith(['sortable' => $sortable, 'filters' => $filters]);
 }
