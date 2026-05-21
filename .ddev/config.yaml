@@ -57,7 +57,46 @@ hooks:
           mkdir -p web/sites/default/private
           ddev drush cache:rebuild
           ddev drush php:script /var/www/html/scripts/setup-about-page.php
-          ddev drush scolta:build
+
+          # Build Scolta search index with automatic resume on memory pressure.
+          # The indexer commits chunks to disk before yielding, so each pass
+          # picks up where the last one left off. With the default 512 MB ddev
+          # memory limit, expect ~20 passes for the full 6900+ entity corpus.
+          MAX_PASSES=40
+          PASS=0
+          BUILD_COMPLETE=false
+
+          while [ "$BUILD_COMPLETE" = "false" ] && [ "$PASS" -lt "$MAX_PASSES" ]; do
+            PASS=$((PASS + 1))
+
+            if [ "$PASS" -eq 1 ]; then
+              echo "Scolta build pass $PASS/$MAX_PASSES..."
+              ddev drush scolta:build 2>&1 || true
+            else
+              echo "Scolta resume pass $PASS/$MAX_PASSES..."
+              ddev drush scolta:build --resume 2>&1 || true
+            fi
+
+            STATUS=$(ddev drush scolta:status 2>&1)
+            INDEXED=$(echo "$STATUS" | grep -o 'Indexed: [0-9]*' | grep -o '[0-9]*')
+            TOTAL=$(echo "$STATUS" | grep -o 'Indexed: [0-9]*/[0-9]*' | grep -o '/[0-9]*' | tr -d '/')
+
+            if [ -n "$INDEXED" ] && [ -n "$TOTAL" ] && [ "$INDEXED" -ge "$TOTAL" ] && [ "$TOTAL" -gt 0 ]; then
+              BUILD_COMPLETE=true
+              echo "Scolta indexing complete: $INDEXED/$TOTAL entities indexed."
+            else
+              echo "Scolta progress: ${INDEXED:-0}/${TOTAL:-?} entities indexed."
+            fi
+          done
+
+          if [ "$BUILD_COMPLETE" = "false" ]; then
+            echo ""
+            echo "WARNING: Scolta indexing did not complete after $MAX_PASSES passes."
+            echo "Run 'ddev drush scolta:build --resume' to continue indexing."
+            echo "Use 'ddev drush scolta:status' to check progress."
+            echo ""
+          fi
+
           touch db/.imported
           echo "Setup complete."
         fi
