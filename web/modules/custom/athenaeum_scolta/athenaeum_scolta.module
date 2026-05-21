@@ -32,23 +32,17 @@ function athenaeum_scolta_theme($existing, $type, $theme, $path): array {
 /**
  * Implements hook_scolta_content_item_alter().
  *
- * Populates word_count and reference_count sortable fields from the
- * featured_article content type's integer fields.
+ * Overrides the auto-mapped topics with a proper array so each topic
+ * becomes a separate Pagefind filter entry for faceted search.
+ * The auto-mapper comma-joins multi-value entity references; we need
+ * individual array elements instead.
+ *
+ * Sortable fields (word_count, reference_count) and single-value
+ * filters (era, region) are handled by field_mappings config.
  */
 function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, FieldableEntityInterface $entity): void {
   if ($entity->bundle() !== 'featured_article') {
     return;
-  }
-
-  $sortable = $item->sortable;
-  $filters = $item->filters;
-
-  if ($entity->hasField('field_word_count') && !$entity->get('field_word_count')->isEmpty()) {
-    $sortable['word_count'] = (int) $entity->get('field_word_count')->value;
-  }
-
-  if ($entity->hasField('field_reference_count') && !$entity->get('field_reference_count')->isEmpty()) {
-    $sortable['reference_count'] = (int) $entity->get('field_reference_count')->value;
   }
 
   if ($entity->hasField('field_topics') && !$entity->get('field_topics')->isEmpty()) {
@@ -59,23 +53,9 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
       }
     }
     if (!empty($topics)) {
+      $filters = $item->filters;
       $filters['topics'] = $topics;
+      $item = $item->cloneWith(['filters' => $filters]);
     }
   }
-
-  if ($entity->hasField('field_era') && !$entity->get('field_era')->isEmpty()) {
-    $era = $entity->get('field_era')->entity;
-    if ($era) {
-      $filters['era'] = $era->label();
-    }
-  }
-
-  if ($entity->hasField('field_region') && !$entity->get('field_region')->isEmpty()) {
-    $region = $entity->get('field_region')->entity;
-    if ($region) {
-      $filters['region'] = $region->label();
-    }
-  }
-
-  $item = $item->cloneWith(['sortable' => $sortable, 'filters' => $filters]);
 }

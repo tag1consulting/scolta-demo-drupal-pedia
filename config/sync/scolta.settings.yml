@@ -16,6 +16,13 @@ sortable_fields:
 sortable_field_descriptions:
   word_count: 'Total number of words in the Wikipedia article (typically 2,000–15,000)'
   reference_count: 'Number of citations and references in the Wikipedia article'
+field_mappings:
+  sortable:
+    field_word_count: word_count
+    field_reference_count: reference_count
+  filters:
+    field_era: era
+    field_region: region
 scoring:
   title_match_boost: 2.0
   title_all_terms_multiplier: 1.5

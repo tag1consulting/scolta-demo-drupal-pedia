@@ -6577,12 +6577,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/tag1consulting/scolta-drupal.git",
-                "reference": "ca9fe01426368a43dbdf3416c3c03dd721245c43"
+                "reference": "3b611392aad57c5c93862207200c2271349ea731"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tag1consulting/scolta-drupal/zipball/ca9fe01426368a43dbdf3416c3c03dd721245c43",
-                "reference": "ca9fe01426368a43dbdf3416c3c03dd721245c43",
+                "url": "https://api.github.com/repos/tag1consulting/scolta-drupal/zipball/3b611392aad57c5c93862207200c2271349ea731",
+                "reference": "3b611392aad57c5c93862207200c2271349ea731",
                 "shasum": ""
             },
             "require": {
@@ -6659,10 +6659,10 @@
             ],
             "description": "Scolta AI Search for Drupal — Search API backend with Pagefind client-side search",
             "support": {
-                "source": "https://github.com/tag1consulting/scolta-drupal/tree/v1.0.0-rc4",
+                "source": "https://github.com/tag1consulting/scolta-drupal/tree/main",
                 "issues": "https://github.com/tag1consulting/scolta-drupal/issues"
             },
-            "time": "2026-05-18T11:38:13+00:00"
+            "time": "2026-05-21T19:36:06+00:00"
         },
         {
             "name": "tag1/scolta-php",
