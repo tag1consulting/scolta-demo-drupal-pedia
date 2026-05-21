@@ -59,7 +59,10 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
       }
     }
     if (!empty($topics)) {
-      $filters['topics'] = $topics;
+      // StreamingFormatWriter uses filter values as array keys, so
+      // multi-value arrays cause TypeError. Join until scolta-php
+      // handles array filter values natively.
+      $filters['topics'] = count($topics) === 1 ? $topics[0] : implode(', ', $topics);
     }
   }
 
