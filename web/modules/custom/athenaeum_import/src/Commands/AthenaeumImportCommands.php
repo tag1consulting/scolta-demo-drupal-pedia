@@ -882,9 +882,6 @@ class AthenaeumImportCommands extends DrushCommands {
       $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
     }
 
-    // Keyword-to-topic map. Keys are matched as whole words against the
-    // lower-cased category name after stripping the "Category:" prefix and
-    // Wikipedia maintenance-category patterns.
     $keywordMap = [
       'science' => 'Science', 'physics' => 'Science', 'chemistry' => 'Science',
       'biology' => 'Science', 'astronomy' => 'Science', 'geology' => 'Science',
@@ -894,8 +891,10 @@ class AthenaeumImportCommands extends DrushCommands {
       'naval' => 'Military', 'warfare' => 'Military', 'army' => 'Military',
       'biography' => 'Biography',
       'painting' => 'Arts', 'sculpture' => 'Arts', 'visual arts' => 'Arts',
-      'music' => 'Arts', 'musician' => 'Arts', 'composer' => 'Arts',
+      'music' => 'Arts', 'musician' => 'Arts', 'composer' => 'Arts', 'composers' => 'Arts',
       'literature' => 'Arts', 'novelist' => 'Arts', 'poetry' => 'Arts',
+      'poet' => 'Arts', 'poets' => 'Arts', 'writer' => 'Arts', 'writers' => 'Arts',
+      'singer' => 'Arts', 'singers' => 'Arts', 'actor' => 'Arts', 'actors' => 'Arts',
       'cinema' => 'Arts', 'films' => 'Arts', 'theatre' => 'Arts',
       'architecture' => 'Arts', 'artwork' => 'Arts', 'artistic' => 'Arts',
       'technology' => 'Technology', 'engineering' => 'Engineering',
@@ -917,7 +916,22 @@ class AthenaeumImportCommands extends DrushCommands {
       'surgery' => 'Medicine', 'anatomy' => 'Medicine', 'pharmacology' => 'Medicine',
     ];
 
-    // Skip Wikipedia maintenance categories that contain these patterns.
+    $compoundMap = [
+      'science fiction' => 'Arts',
+      'political science' => 'Society',
+      'computer science' => 'Technology',
+      'library science' => 'Society',
+      'forensic science' => 'Medicine',
+      'rocket science' => 'Technology',
+    ];
+
+    $excludeCompounds = [
+      'science' => ['science fiction', 'political science', 'computer science', 'library science', 'rocket science', 'forensic science', 'social science', 'natural science', 'food science', 'neuroscience'],
+      'war' => ['star wars'],
+      'history' => ['natural history museum'],
+      'medicine' => ['traditional medicine'],
+    ];
+
     $skipPatterns = [
       'articles with', 'wikipedia articles', 'articles needing', 'pages using',
       'cs1 ', 'webarchive', 'all articles', 'good articles', 'featured articles',
@@ -929,7 +943,11 @@ class AthenaeumImportCommands extends DrushCommands {
     foreach ($categories as $cat) {
       $catLower = strtolower($cat);
 
-      // Skip maintenance categories.
+      // Detect biographical articles from birth/death categories before skipping.
+      if (preg_match('/\d{3,4}\s*(births?|deaths?)/i', $catLower) || $catLower === 'living people') {
+        $matchedTopics['Biography'] = TRUE;
+      }
+
       $skip = FALSE;
       foreach ($skipPatterns as $pattern) {
         if (str_contains($catLower, $pattern)) {
@@ -939,8 +957,24 @@ class AthenaeumImportCommands extends DrushCommands {
       }
       if ($skip) continue;
 
+      foreach ($compoundMap as $compound => $topicName) {
+        if (str_contains($catLower, $compound)) {
+          $matchedTopics[$topicName] = TRUE;
+        }
+      }
+
       foreach ($keywordMap as $keyword => $topicName) {
-        // Use word-boundary matching: keyword must appear as a complete word.
+        if (isset($excludeCompounds[$keyword])) {
+          $excluded = FALSE;
+          foreach ($excludeCompounds[$keyword] as $compound) {
+            if (str_contains($catLower, $compound)) {
+              $excluded = TRUE;
+              break;
+            }
+          }
+          if ($excluded) continue;
+        }
+
         if (preg_match('/\b' . preg_quote($keyword, '/') . '\b/', $catLower)) {
           $matchedTopics[$topicName] = TRUE;
         }
@@ -968,32 +1002,96 @@ class AthenaeumImportCommands extends DrushCommands {
     if (empty($eraTermIds)) {
       $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
     }
-    $eraMap = [
-      'Ancient (before 500 CE)' => ['ancient', 'classical antiquity', 'roman empire', 'bc ', 'bce', 'greek antiquity', 'bronze age', 'iron age', 'egypt', 'mesopotamia'],
-      'Medieval (500–1500)' => ['medieval', 'middle ages', 'byzantine', 'crusades', 'feudal', 'viking', '10th century', '11th century', '12th century', '13th century', '14th century', '15th century'],
-      'Early Modern (1500–1800)' => ['early modern', '16th century', '17th century', '18th century', 'renaissance', 'reformation', 'enlightenment', 'colonial era'],
+
+    $resolveEra = function (string $eraName) use ($eraTermIds, &$termStorage): ?int {
+      if (!empty($eraTermIds)) {
+        return $eraTermIds[$eraName] ?? NULL;
+      }
+      $terms = $termStorage->loadByProperties(['name' => $eraName, 'vid' => 'era']);
+      if ($term = reset($terms)) return $term->id();
+      return NULL;
+    };
+
+    $yearToEra = function (int $year): string {
+      if ($year < 500) return 'Ancient (before 500 CE)';
+      if ($year < 1500) return 'Medieval (500–1500)';
+      if ($year < 1800) return 'Early Modern (1500–1800)';
+      if ($year < 1945) return 'Modern (1800–1945)';
+      return 'Contemporary (1945–present)';
+    };
+
+    // Use birth year as the strongest biographical signal.
+    foreach ($categories as $cat) {
+      if (preg_match('/(\d{3,4})\s*births?/i', $cat, $m)) {
+        return $resolveEra($yearToEra((int) $m[1]));
+      }
+    }
+
+    // Filter out Wikipedia maintenance categories before extracting years.
+    $skipEraPatterns = [
+      'articles ', 'wikipedia ', 'pages ', 'cs1 ', 'webarchive',
+      'short description', 'use dmy', 'use mdy', 'use british',
+      'use american', 'infobox', 'good articles', 'featured articles',
+      'commons ', 'coordinates ', 'wikidata',
+    ];
+    $filtered = [];
+    foreach ($categories as $cat) {
+      $catLower = strtolower($cat);
+      $skip = FALSE;
+      foreach ($skipEraPatterns as $pattern) {
+        if (str_contains($catLower, $pattern)) {
+          $skip = TRUE;
+          break;
+        }
+      }
+      if (!$skip) {
+        $filtered[] = $catLower;
+      }
+    }
+    $catsStr = implode(' ', $filtered);
+
+    // Pass 1a: Extract explicit 4-digit years from non-maintenance categories.
+    if (preg_match_all('/\b(1\d{3}|20[0-2]\d)\b/', $catsStr, $yearMatches)) {
+      $years = array_map('intval', $yearMatches[1]);
+      sort($years);
+      $medianYear = $years[intdiv(count($years), 2)];
+      return $resolveEra($yearToEra($medianYear));
+    }
+
+    // Pass 1b: Unambiguous century and temporal keywords.
+    $temporalMap = [
+      'Ancient (before 500 CE)' => ['bc ', 'bce', '1st century', '2nd century', '3rd century', '4th century', '5th century'],
+      'Medieval (500–1500)' => ['6th century', '7th century', '8th century', '9th century', '10th century', '11th century', '12th century', '13th century', '14th century', '15th century'],
+      'Early Modern (1500–1800)' => ['16th century', '17th century', '18th century'],
       'Modern (1800–1945)' => ['19th century', 'world war', 'victorian', 'industrial revolution', 'edwardian', 'interwar'],
-      'Contemporary (1945–present)' => ['21st century', 'cold war', 'contemporary', 'post-war', '1950s', '1960s', '1970s', '1980s', '1990s', '2000s'],
+      'Contemporary (1945–present)' => ['20th century', '21st century', 'cold war', '1950s', '1960s', '1970s', '1980s', '1990s', '2000s', '2010s', '2020s'],
     ];
 
-    $catsStr = strtolower(implode(' ', $categories));
-    foreach ($eraMap as $eraName => $keywords) {
+    foreach ($temporalMap as $eraName => $keywords) {
       foreach ($keywords as $kw) {
         if (str_contains($catsStr, $kw)) {
-          if (!empty($eraTermIds)) {
-            return $eraTermIds[$eraName] ?? NULL;
-          }
-          $terms = $termStorage->loadByProperties(['name' => $eraName, 'vid' => 'era']);
-          if ($term = reset($terms)) return $term->id();
+          return $resolveEra($eraName);
         }
       }
     }
-    if (!empty($eraTermIds)) {
-      return $eraTermIds['Timeless'] ?? NULL;
+
+    // Pass 2: Contextual keywords (lower confidence, only when no temporal marker found).
+    $contextMap = [
+      'Ancient (before 500 CE)' => ['classical antiquity', 'roman empire', 'greek antiquity', 'bronze age', 'iron age', 'mesopotamia'],
+      'Medieval (500–1500)' => ['medieval', 'middle ages', 'byzantine', 'crusades', 'feudal', 'viking'],
+      'Early Modern (1500–1800)' => ['early modern', 'renaissance', 'reformation', 'enlightenment', 'colonial era'],
+      'Contemporary (1945–present)' => ['contemporary', 'post-war'],
+    ];
+
+    foreach ($contextMap as $eraName => $keywords) {
+      foreach ($keywords as $kw) {
+        if (str_contains($catsStr, $kw)) {
+          return $resolveEra($eraName);
+        }
+      }
     }
-    $terms = $termStorage->loadByProperties(['name' => 'Timeless', 'vid' => 'era']);
-    if ($term = reset($terms)) return $term->id();
-    return NULL;
+
+    return $resolveEra('Timeless');
   }
 
   protected function mapCategoriesToRegion(array $categories, array $regionTermIds = []): ?int {
