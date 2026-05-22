@@ -31,7 +31,7 @@ scoring:
   recency_half_life_days: 3650
   recency_penalty_after_days: 36500
   recency_max_penalty: 0.05
-  expand_primary_weight: 0.7
+  expand_primary_weight: 0.5
   language: en
   custom_stop_words: {  }
   recency_strategy: exponential
