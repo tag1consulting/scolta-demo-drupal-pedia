@@ -16,6 +16,14 @@ sortable_fields:
 sortable_field_descriptions:
   word_count: 'Total number of words in the Wikipedia article (typically 2,000–15,000)'
   reference_count: 'Number of citations and references in the Wikipedia article'
+filter_fields:
+  - topics
+  - era
+  - region
+filter_field_descriptions:
+  topics: 'Subject area or domain. Valid values: Arts, Biography, Engineering, Geography, History, Mathematics, Medicine, Military, Nature, Philosophy, Religion, Science, Society, Sports, Technology'
+  era: 'Historical period. Values: "Ancient (before 500 CE)", "Medieval (500-1500)", "Early Modern (1500-1800)", "Modern (1800-1945)", "Contemporary (1945-present)", "Timeless"'
+  region: 'Geographic region. Values: Africa, Americas, Antarctica, Asia, Europe, "Global / Multiple Regions", "Not Geographic", Oceania, Space'
 field_mappings:
   sortable:
     field_word_count: word_count
@@ -36,7 +44,6 @@ scoring:
   custom_stop_words: {  }
   recency_strategy: exponential
   recency_curve: {  }
-  max_pagefind_results: '50'
 display:
   excerpt_length: 350
   results_per_page: 12

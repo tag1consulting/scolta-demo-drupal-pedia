@@ -23,6 +23,27 @@ $config->setData([
   'max_follow_ups' => 3,
   'site_name' => 'The Athenaeum',
   'site_description' => 'Wikipedia\'s ~6,900 Featured Articles — the highest-quality encyclopedia entries spanning all domains of human knowledge. Search to discover unexpected connections across science, history, art, nature, and more.',
+  'sortable_fields' => ['word_count', 'reference_count'],
+  'sortable_field_descriptions' => [
+    'word_count' => 'Total number of words in the Wikipedia article (typically 2,000–15,000)',
+    'reference_count' => 'Number of citations and references in the Wikipedia article',
+  ],
+  'filter_fields' => ['topics', 'era', 'region'],
+  'filter_field_descriptions' => [
+    'topics' => 'Subject area or domain. Valid values: Arts, Biography, Engineering, Geography, History, Mathematics, Medicine, Military, Nature, Philosophy, Religion, Science, Society, Sports, Technology',
+    'era' => 'Historical period. Values: "Ancient (before 500 CE)", "Medieval (500-1500)", "Early Modern (1500-1800)", "Modern (1800-1945)", "Contemporary (1945-present)", "Timeless"',
+    'region' => 'Geographic region. Values: Africa, Americas, Antarctica, Asia, Europe, "Global / Multiple Regions", "Not Geographic", Oceania, Space',
+  ],
+  'field_mappings' => [
+    'sortable' => [
+      'field_word_count' => 'word_count',
+      'field_reference_count' => 'reference_count',
+    ],
+    'filters' => [
+      'field_era' => 'era',
+      'field_region' => 'region',
+    ],
+  ],
   'scoring' => [
     'title_match_boost' => 2.0,
     'title_all_terms_multiplier' => 1.5,
@@ -31,7 +52,7 @@ $config->setData([
     'recency_half_life_days' => 3650,
     'recency_penalty_after_days' => 36500,
     'recency_max_penalty' => 0.05,
-    'expand_primary_weight' => 0.6,
+    'expand_primary_weight' => 0.5,
     'language' => 'en',
     'custom_stop_words' => [],
     'recency_strategy' => 'exponential',
