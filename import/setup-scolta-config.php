@@ -30,7 +30,7 @@ $config->setData([
   ],
   'filter_fields' => ['topics', 'era', 'region'],
   'filter_field_descriptions' => [
-    'topics' => 'Subject area or domain. Valid values: Arts, Biography, Engineering, Geography, History, Mathematics, Medicine, Military, Nature, Philosophy, Religion, Science, Society, Sports, Technology',
+    'topics' => 'Subject area or domain. Map the user\'s topic to one of these values: Arts (music, painting, sculpture, literature, poetry, film, theatre, architecture, fiction, writers, composers, actors, singers), Biography, Engineering, Geography (countries, cities, islands, rivers, mountains), History (ancient, medieval, early modern, modern, social history), Mathematics, Medicine (disease, health, surgery, anatomy, pharmacology), Military (wars, battles, naval, warfare, army), Nature (animals, plants, ecology, wildlife, insects, birds, fish, mammals, species), Philosophy, Religion (Christianity, Islam, Buddhism, Hinduism, Judaism), Science (physics, chemistry, biology, astronomy, geology, earth sciences), Society (politics, economics, law, government), Sports (football, cricket, tennis, Olympic), Technology (computing, software, electronics, telecommunications)',
     'era' => 'Historical period. Values: "Ancient (before 500 CE)", "Medieval (500-1500)", "Early Modern (1500-1800)", "Modern (1800-1945)", "Contemporary (1945-present)", "Timeless"',
     'region' => 'Geographic region. Values: Africa, Americas, Antarctica, Asia, Europe, "Global / Multiple Regions", "Not Geographic", Oceania, Space',
   ],
