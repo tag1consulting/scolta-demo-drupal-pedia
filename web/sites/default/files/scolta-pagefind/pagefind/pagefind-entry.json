@@ -2,9 +2,9 @@
     "version": "1.5.0",
     "languages": {
         "en": {
-            "hash": "en_f26dc6f89f",
+            "hash": "en_04241ec4ad",
             "wasm": "en",
-            "page_count": 6911
+            "page_count": 6915
         }
     },
     "include_characters": []
