@@ -30,19 +30,19 @@ if (empty($existing)) {
 <h2>Why Scolta?</h2>
 <p>This site is a demonstration of <strong>Scolta</strong>, a search quality enhancement system developed by <a href="https://tag1consulting.com">Tag1 Consulting</a>. Scolta uses AI-powered semantic understanding to surface articles that are conceptually related — even when they share no keywords.</p>
 
-<p>Try searching for <em>"ancient water systems"</em>. A keyword search returns articles containing those exact words. Scolta returns Roman aqueducts, Mesopotamian irrigation canals, Hawaiian fishponds, Persian qanats, and Dutch polders — because it understands what you're asking, not just what you typed.</p>
+<p>Try searching for <em>"shipwrecks"</em>. A keyword search returns articles with that word in the title. Scolta goes further — surfacing Dürer's Rhinoceros (the rhinoceros was lost at sea), The Raft of the Medusa (Géricault's iconic painting of a shipwreck's aftermath), The Open Boat (Stephen Crane's short story), and Banker horse (feral horses on the Outer Banks, descended from shipwreck survivors). It finds the connections between maritime disaster and art, literature, and biology.</p>
 
 <p>The breadth and quality of Wikipedia's Featured Articles makes this the ideal stress test: 6,900 articles across every conceivable topic, with Scolta finding the unexpected connections between them.</p>
 
 <h2>Showcase Queries</h2>
-<p>These queries demonstrate Scolta's cross-domain semantic discovery:</p>
+<p>These queries demonstrate Scolta's cross-domain semantic discovery — surfacing articles connected by meaning, not just keywords:</p>
 <ul>
-  <li><strong>ancient water systems</strong> → Roman aqueducts, Mesopotamian irrigation, Hawaiian fishponds, qanats</li>
-  <li><strong>survival in extreme conditions</strong> → Antarctic exploration, extremophile bacteria, Apollo 13, Andes flight disaster</li>
-  <li><strong>beautiful mathematics</strong> → Fractals, golden ratio, Euler's identity, Islamic geometric patterns</li>
-  <li><strong>animals that build</strong> → Beavers, termite mounds, bowerbirds, coral reefs</li>
-  <li><strong>forgotten kingdoms</strong> → Khmer Empire, Aksum, Majapahit, Great Zimbabwe, Nabataeans</li>
-  <li><strong>when science was wrong</strong> → Phlogiston, luminiferous aether, miasma theory, Piltdown Man</li>
+  <li><strong>shipwrecks</strong> → SS Edmund Fitzgerald, Last voyage of the Karluk, AHS Centaur — but also Dürer's Rhinoceros (the rhino was lost in a shipwreck), The Raft of the Medusa (Géricault's painting), The Open Boat (Stephen Crane's story), and Banker horse (feral horses descended from shipwreck survivors)</li>
+  <li><strong>rats and mice</strong> → Howard Florey (penicillin was tested on mice), Noronhomys (an extinct Brazilian island rat wiped out by European colonization), Malkin Tower and Grace Sherwood (witch trials — rats as familiars), Dirty Dick (Nathaniel Bentley's rat-infested London shop), plus biochemistry connections like Major urinary proteins and Serpin</li>
+  <li><strong>mathematical proofs</strong> → Leonhard Euler, Georg Cantor, Emmy Noether, Problem of Apollonius, Pi — and James A. Garfield (the U.S. president who published a proof of the Pythagorean theorem)</li>
+  <li><strong>animals thought to be extinct</strong> → Dire wolf, Smilodon, Passenger pigeon, Huia, Sea mink, Bluebuck — spanning mammals, birds, marine life, and the Cretaceous–Paleogene extinction event</li>
+  <li><strong>volcanic eruptions</strong> → 1257 Samalas eruption, Cerro Blanco, Boring Lava Field — but also Volcanism on Io (Jupiter's moon), Omayra Sánchez (the Armero tragedy), and David A. Johnston (the volcanologist killed at Mount St. Helens)</li>
+  <li><strong>women who defied expectations</strong> → Eunice Newton Foote (overlooked climate science pioneer), Rose Cleveland (first lady who lived openly as a lesbian in the 1880s), Ann Bannon (pioneering lesbian pulp fiction author), 1999 FIFA Women's World Cup, Carmen, Kangana Ranaut</li>
 </ul>
 
 <h2>Content License</h2>
