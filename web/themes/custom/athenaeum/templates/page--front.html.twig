@@ -47,17 +47,17 @@
 
       <form class="hero-search__form" action="/search" method="get">
         <input class="hero-search__input" type="search" name="q"
-               placeholder="Try: ancient water systems, survival in extreme conditions, beautiful mathematics…"
+               placeholder="Try: shipwrecks, rats and mice, mathematical proofs…"
                aria-label="Search featured articles">
         <button class="hero-search__btn" type="submit">Search</button>
       </form>
 
       <div class="hero-search__examples">
         Example: &nbsp;
-        <a data-example-query="ancient water systems">ancient water systems</a> &nbsp;·&nbsp;
-        <a data-example-query="animals that build">animals that build</a> &nbsp;·&nbsp;
-        <a data-example-query="forgotten kingdoms">forgotten kingdoms</a> &nbsp;·&nbsp;
-        <a data-example-query="when science was wrong">when science was wrong</a>
+        <a data-example-query="shipwrecks">shipwrecks</a> &nbsp;·&nbsp;
+        <a data-example-query="rats and mice">rats and mice</a> &nbsp;·&nbsp;
+        <a data-example-query="mathematical proofs">mathematical proofs</a> &nbsp;·&nbsp;
+        <a data-example-query="women who defied expectations">women who defied expectations</a>
       </div>
     </section>
 
@@ -93,15 +93,15 @@
         <p style="color:#555;font-size:0.9rem">Scolta finds cross-domain connections that keyword search cannot — try these queries to see:</p>
         <div style="display:flex;flex-wrap:wrap;gap:0.6rem;margin-top:1rem">
           {% for q in [
-            'ancient water systems',
-            'survival in extreme conditions',
-            'beautiful mathematics',
-            'things that changed the world overnight',
-            'animals that build',
-            'forgotten kingdoms',
-            'music and revolution',
-            'tiny things with huge impact',
-            'when science was wrong',
+            'shipwrecks',
+            'rats and mice',
+            'mathematical proofs',
+            'animals thought to be extinct',
+            'volcanic eruptions',
+            'women who defied expectations',
+            'plagues and epidemics',
+            'art inspired by war',
+            'space missions that failed',
           ] %}
             <a href="/search?q={{ q|url_encode }}"
                style="display:inline-block;background:var(--color-parchment-dark);border:1px solid var(--color-border);border-radius:4px;padding:0.4rem 0.8rem;font-size:0.88rem;color:var(--color-navy);text-decoration:none">
