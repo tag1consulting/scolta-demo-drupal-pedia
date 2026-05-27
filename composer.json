@@ -47,7 +47,10 @@
             "phpstan/extension-installer": true,
             "tbachert/spi": true
         },
-        "sort-packages": true
+        "sort-packages": true,
+        "audit": {
+            "block-insecure": false
+        }
     },
     "scripts": {
         "post-install-cmd": [
