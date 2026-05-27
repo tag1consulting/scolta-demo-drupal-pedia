@@ -59,32 +59,22 @@ for img in "${SAMPLE_IMAGES[@]}"; do
 done
 echo "==> Sample images OK"
 
-echo "==> Verifying search index metadata..."
-# The full pagefind index (~232 MB) is too large to store in git; only the
-# pagefind-entry.json metadata file is committed so CI can confirm the index
-# was built with the correct page count.
-PAGEFIND_ENTRY_URL="http://localhost:${PORT}/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json"
-MIN_PAGES=5000
-
-META_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$PAGEFIND_ENTRY_URL" 2>/dev/null || true)
-if [ "$META_CODE" != "200" ]; then
-  echo "FAIL: Pagefind index metadata not found at $PAGEFIND_ENTRY_URL (HTTP $META_CODE)"
+echo "==> Verifying search index prerequisites..."
+# The pagefind index is gitignored and rebuilt at runtime (ddev start / deploy).
+# Verify the pagefind binary and Scolta module are present in the image.
+HAS_PAGEFIND=$(docker exec "$IMAGE" sh -c 'pagefind --version 2>/dev/null && echo ok || echo missing')
+if echo "$HAS_PAGEFIND" | grep -q "missing"; then
+  echo "FAIL: pagefind binary not found in container"
   exit 1
 fi
-echo "PASS: Pagefind index metadata served (HTTP 200)"
+echo "PASS: pagefind binary available ($(echo "$HAS_PAGEFIND" | head -1))"
 
-PAGE_COUNT=$(curl -s "$PAGEFIND_ENTRY_URL" | python3 -c "
-import sys, json
-d = json.load(sys.stdin)
-counts = [d['languages'][l]['page_count'] for l in d.get('languages', {})]
-print(max(counts) if counts else 0)
-" 2>/dev/null || echo "0")
-
-if [ "$PAGE_COUNT" -lt "$MIN_PAGES" ]; then
-  echo "FAIL: Only $PAGE_COUNT pages indexed (minimum: $MIN_PAGES)"
+HAS_MODULE=$(docker exec "$IMAGE" sh -c 'test -f /var/www/html/web/modules/contrib/scolta-drupal/scolta.info.yml && echo ok || echo missing')
+if [ "$HAS_MODULE" != "ok" ]; then
+  echo "FAIL: scolta-drupal module not found in container"
   exit 1
 fi
-echo "PASS: $PAGE_COUNT pages indexed (minimum: $MIN_PAGES)"
+echo "PASS: scolta-drupal module installed"
 
 echo "==> Verifying About page setup script exists..."
 test -f scripts/setup-about-page.php || (echo "FAIL: scripts/setup-about-page.php missing from repo" && exit 1)
