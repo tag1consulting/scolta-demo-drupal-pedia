@@ -100,5 +100,43 @@ hooks:
           touch db/.imported
           echo "Setup complete."
         fi
+    - exec-host: |
+        # Rebuild pagefind index if missing (gitignored, so absent on fresh clone).
+        # The PHP indexer yields on memory pressure and spawns background resumes,
+        # so we loop until pagefind-entry.json appears on disk.
+        if ! ddev exec test -f web/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json 2>/dev/null; then
+          echo "Pagefind index missing — rebuilding..."
+          MAX_PASSES=40
+          PASS=0
+
+          while ! ddev exec test -f web/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json 2>/dev/null && [ "$PASS" -lt "$MAX_PASSES" ]; do
+            PASS=$((PASS + 1))
+
+            if [ "$PASS" -eq 1 ]; then
+              echo "Scolta build pass $PASS/$MAX_PASSES..."
+              ddev drush scolta:build 2>&1 || true
+            else
+              echo "Scolta resume pass $PASS/$MAX_PASSES..."
+              ddev drush scolta:build --resume 2>&1 || true
+            fi
+
+            # The build spawns background resumes on memory pressure.
+            # Wait up to 90s for a resume to finish before starting the next pass.
+            for i in $(seq 1 18); do
+              if ddev exec test -f web/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json 2>/dev/null; then
+                break
+              fi
+              sleep 5
+            done
+          done
+
+          if ddev exec test -f web/sites/default/files/scolta-pagefind/pagefind/pagefind-entry.json 2>/dev/null; then
+            FRAGMENTS=$(ddev drush scolta:status 2>&1 | grep -o 'Fragments: *[0-9]*' | grep -o '[0-9]*')
+            echo "Scolta indexing complete: ${FRAGMENTS:-?} pagefind fragments."
+          else
+            echo "WARNING: Scolta indexing did not complete after $MAX_PASSES passes."
+            echo "Run 'ddev drush scolta:build --resume' to continue."
+          fi
+        fi
 
 additional_fqdns: []
