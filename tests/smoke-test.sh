@@ -69,7 +69,7 @@ if echo "$HAS_PAGEFIND" | grep -q "missing"; then
 fi
 echo "PASS: pagefind binary available ($(echo "$HAS_PAGEFIND" | head -1))"
 
-HAS_MODULE=$(docker exec "$IMAGE" sh -c 'test -f /var/www/html/web/modules/contrib/scolta-drupal/scolta.info.yml && echo ok || echo missing')
+HAS_MODULE=$(docker exec "$IMAGE" sh -c 'test -f /var/www/html/web/modules/contrib/scolta/scolta.info.yml && echo ok || echo missing')
 if [ "$HAS_MODULE" != "ok" ]; then
   echo "FAIL: scolta-drupal module not found in container"
   exit 1
