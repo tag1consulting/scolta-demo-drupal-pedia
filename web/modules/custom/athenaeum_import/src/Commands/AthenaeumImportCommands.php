@@ -481,6 +481,163 @@ class AthenaeumImportCommands extends DrushCommands {
   }
 
   /**
+   * Generates Era Landing Page nodes for each term in the era vocabulary.
+   */
+  #[CLI\Command(name: 'athenaeum:generate-era-landing-pages', aliases: ['ath-era-landing'])]
+  #[CLI\Usage(name: 'drush athenaeum:generate-era-landing-pages', description: 'Create an Era Landing Page for each era term')]
+  public function generateEraLandingPages(): void {
+    $this->output()->writeln('<info>Generating Era Landing Pages...</info>');
+
+    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+    $terms = $termStorage->loadByProperties(['vid' => 'era']);
+    $created = 0;
+
+    foreach ($terms as $term) {
+      $existing = $nodeStorage->loadByProperties(['type' => 'era_landing_page', 'field_era' => $term->id()]);
+      if (!empty($existing)) continue;
+
+      $name = $term->getName();
+      $intro = "Explore Wikipedia's Featured Articles from the {$name} era — "
+        . "the encyclopedia's highest-quality entries covering this period of history.";
+
+      $nodeStorage->create([
+        'type' => 'era_landing_page',
+        'title' => $name,
+        'body' => ['value' => $intro, 'format' => 'basic_html'],
+        'field_era' => ['target_id' => $term->id()],
+        'status' => 1,
+      ])->save();
+
+      $this->output()->writeln("  Created: $name");
+      $created++;
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. Created %d era landing pages.</info>', $created));
+  }
+
+  /**
+   * Generates Region Landing Page nodes for each term in the region vocabulary.
+   */
+  #[CLI\Command(name: 'athenaeum:generate-region-landing-pages', aliases: ['ath-region-landing'])]
+  #[CLI\Usage(name: 'drush athenaeum:generate-region-landing-pages', description: 'Create a Region Landing Page for each region term')]
+  public function generateRegionLandingPages(): void {
+    $this->output()->writeln('<info>Generating Region Landing Pages...</info>');
+
+    $termStorage = $this->entityTypeManager->getStorage('taxonomy_term');
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+    $terms = $termStorage->loadByProperties(['vid' => 'region']);
+    $created = 0;
+
+    foreach ($terms as $term) {
+      $existing = $nodeStorage->loadByProperties(['type' => 'region_landing_page', 'field_region' => $term->id()]);
+      if (!empty($existing)) continue;
+
+      $name = $term->getName();
+      $intro = "Explore Wikipedia's Featured Articles about {$name} — "
+        . "the encyclopedia's highest-quality entries connected to this part of the world.";
+
+      $nodeStorage->create([
+        'type' => 'region_landing_page',
+        'title' => $name,
+        'body' => ['value' => $intro, 'format' => 'basic_html'],
+        'field_region' => ['target_id' => $term->id()],
+        'status' => 1,
+      ])->save();
+
+      $this->output()->writeln("  Created: $name");
+      $created++;
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. Created %d region landing pages.</info>', $created));
+  }
+
+  /**
+   * Populates field_coordinates from the MediaWiki coordinates API.
+   *
+   * Mirrors the image backfill: batches up to 50 pageids per request and is
+   * idempotent/resumable (only loads articles with a pageid and no coordinates).
+   * Articles with no coordinates from the API stay empty and won't appear on
+   * the map — expected for abstract/non-geographic topics.
+   */
+  #[CLI\Command(name: 'athenaeum:populate-coordinates', aliases: ['ath-coords'])]
+  #[CLI\Usage(name: 'drush athenaeum:populate-coordinates', description: 'Fetch geo-coordinates from Wikipedia for location-based articles')]
+  public function populateCoordinates(): void {
+    $this->output()->writeln('<info>Populating article coordinates from Wikipedia...</info>');
+
+    $nodeStorage = $this->entityTypeManager->getStorage('node');
+
+    // Only load articles that have a pageid and no coordinates yet.
+    $nids = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('type', 'featured_article')
+      ->exists('field_wikipedia_pageid')
+      ->notExists('field_coordinates')
+      ->execute();
+
+    $total = count($nids);
+    $located = 0;
+
+    $this->output()->writeln(sprintf('  %d articles need coordinates.', $total));
+    flush();
+
+    foreach (array_chunk($nids, 50) as $chunk) {
+      $nodes = $nodeStorage->loadMultiple($chunk);
+
+      // Map pageid => node and batch-fetch coordinates for all 50 in one call.
+      $pageMap = [];
+      foreach ($nodes as $node) {
+        $pageid = $node->get('field_wikipedia_pageid')->value;
+        if ($pageid !== NULL && $pageid !== '') {
+          $pageMap[(string) $pageid] = $node;
+        }
+      }
+      if (empty($pageMap)) {
+        $nodeStorage->resetCache($chunk);
+        continue;
+      }
+
+      $params = [
+        'action' => 'query',
+        'prop' => 'coordinates',
+        'pageids' => implode('|', array_keys($pageMap)),
+        'coprimary' => 'primary',
+        'format' => 'json',
+      ];
+      $data = $this->apiRequest($params);
+      if (!$data) {
+        usleep(2000 * 1000);
+        $data = $this->apiRequest($params);
+      }
+      $pages = $data['query']['pages'] ?? [];
+
+      foreach ($pages as $page) {
+        $coord = $page['coordinates'][0] ?? NULL;
+        if (!$coord || !isset($coord['lat'], $coord['lon'])) continue;
+
+        $node = $pageMap[(string) ($page['pageid'] ?? '')] ?? NULL;
+        if (!$node) continue;
+
+        // WKT order is longitude first, then latitude.
+        $node->set('field_coordinates', ['value' => "POINT({$coord['lon']} {$coord['lat']})"]);
+        $node->save();
+        $located++;
+      }
+
+      $nodeStorage->resetCache($chunk);
+
+      if ($located % 200 === 0 && $located > 0) {
+        $this->output()->writeln(sprintf('  located: %d / ~%d', $located, $total));
+        flush();
+      }
+
+      usleep(self::RATE_LIMIT_DELAY_MS * 1000);
+    }
+
+    $this->output()->writeln(sprintf('<info>Done. %d articles got coordinates.</info>', $located));
+  }
+
+  /**
    * AI enrichment: generates "Why This Matters" blurbs via Claude API.
    */
   #[CLI\Command(name: 'athenaeum:enrich', aliases: ['ath-enrich'])]

@@ -1,0 +1,11 @@
+uuid: 059234fa-72a8-4b9e-bda9-d99545452791
+langcode: en
+status: true
+dependencies: {  }
+name: 'Era Landing Page'
+type: era_landing_page
+description: "Hub page for an era; lists that era's featured articles."
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: true

@@ -39,6 +39,42 @@ function athenaeum_preprocess_node(&$variables) {
       }
     }
   }
+
+  if ($node instanceof NodeInterface && $node->bundle() === 'era_landing_page') {
+    if ($node->hasField('field_era') && !$node->get('field_era')->isEmpty()) {
+      $term = $node->get('field_era')->entity;
+      if ($term && \Drupal::moduleHandler()->moduleExists('views') && _athenaeum_term_has_articles('field_era', $term->id())) {
+        $variables['era_articles'] = views_embed_view('articles_by_era', 'block_1', $term->id());
+      }
+    }
+  }
+
+  if ($node instanceof NodeInterface && $node->bundle() === 'region_landing_page') {
+    if ($node->hasField('field_region') && !$node->get('field_region')->isEmpty()) {
+      $term = $node->get('field_region')->entity;
+      if ($term && \Drupal::moduleHandler()->moduleExists('views') && _athenaeum_term_has_articles('field_region', $term->id())) {
+        $variables['region_articles'] = views_embed_view('articles_by_region', 'block_1', $term->id());
+      }
+    }
+  }
+}
+
+/**
+ * Returns TRUE if any published featured article references the given term.
+ *
+ * Lets the landing-page templates fall through to their empty-state message
+ * for terms with no articles (e.g. Antarctica, Space), since views_embed_view()
+ * always returns a non-empty render array.
+ */
+function _athenaeum_term_has_articles(string $field, int $tid): bool {
+  return (bool) \Drupal::entityQuery('node')
+    ->accessCheck(TRUE)
+    ->condition('type', 'featured_article')
+    ->condition('status', 1)
+    ->condition($field, $tid)
+    ->range(0, 1)
+    ->count()
+    ->execute();
 }
 
 /**

@@ -1,0 +1,24 @@
+uuid: 85d5ab96-d609-4eb4-ba58-adbb384928e5
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_era
+    - node.type.era_landing_page
+    - taxonomy.vocabulary.era
+id: node.era_landing_page.field_era
+field_name: field_era
+entity_type: node
+bundle: era_landing_page
+label: Era
+description: 'The taxonomy term this landing page represents.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      era: era
+field_type: entity_reference

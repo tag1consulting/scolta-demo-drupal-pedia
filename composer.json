@@ -9,6 +9,7 @@
         "drupal/core-project-message": "^11",
         "drupal/core-recommended": "^11",
         "drupal/geofield": "^1.0",
+        "drupal/leaflet": "^10.4",
         "drupal/pathauto": "^1.12",
         "drupal/scolta": "^1.0.2",
         "drupal/search_api": "^1.0",

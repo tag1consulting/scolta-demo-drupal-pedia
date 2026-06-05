@@ -1,0 +1,24 @@
+uuid: aaa5145f-fca7-4f74-8ddb-01a501e155db
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.body
+    - node.type.era_landing_page
+  module:
+    - text
+id: node.era_landing_page.body
+field_name: body
+entity_type: node
+bundle: era_landing_page
+label: Body
+description: ''
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  display_summary: false
+  required_summary: false
+  allowed_formats: {  }
+field_type: text_with_summary

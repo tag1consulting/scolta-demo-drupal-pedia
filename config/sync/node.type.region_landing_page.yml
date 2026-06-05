@@ -1,0 +1,11 @@
+uuid: 9b68335c-212f-434b-b9f7-806c2fdebc41
+langcode: en
+status: true
+dependencies: {  }
+name: 'Region Landing Page'
+type: region_landing_page
+description: "Hub page for a region; lists that region's featured articles."
+help: null
+new_revision: true
+preview_mode: 1
+display_submitted: true

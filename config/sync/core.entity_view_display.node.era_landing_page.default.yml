@@ -1,0 +1,31 @@
+uuid: d3ccc60e-5b63-47a2-a786-cb55f12e205d
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.field.node.era_landing_page.body
+    - field.field.node.era_landing_page.field_era
+    - node.type.era_landing_page
+  module:
+    - text
+    - user
+id: node.era_landing_page.default
+targetEntityType: node
+bundle: era_landing_page
+mode: default
+content:
+  body:
+    type: text_default
+    label: hidden
+    settings: {  }
+    third_party_settings: {  }
+    weight: 0
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden:
+  field_era: true
+  search_api_excerpt: true

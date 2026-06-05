@@ -4,13 +4,13 @@ status: true
 dependencies:
   config:
     - core.entity_view_mode.node.teaser
-    - node.type.featured_article
+    - node.type.region_landing_page
   module:
     - node
 id: browse_by_region
 label: 'Browse by Region'
 module: views
-description: 'Articles filtered by region via contextual argument.'
+description: 'Index of Region landing pages, shown as a grid of region tiles.'
 tag: athenaeum
 base_table: node_field_data
 base_field: nid
@@ -27,7 +27,7 @@ display:
         type: full
         options:
           offset: 0
-          items_per_page: 24
+          items_per_page: 20
           total_pages: null
           id: 0
           expose:
@@ -48,6 +48,7 @@ display:
           field: title
           plugin_id: standard
           order: ASC
+          exposed: false
       filters:
         status:
           id: status
@@ -61,10 +62,12 @@ display:
           field: type
           plugin_id: bundle
           value:
-            featured_article: featured_article
+            region_landing_page: region_landing_page
       style:
         type: default
-        options: {  }
+        options:
+          row_class: topic-grid__item
+          default_row_class: false
       row:
         type: 'entity:node'
         options:
@@ -73,6 +76,8 @@ display:
       query:
         type: views_query
         options: {  }
+      css_class: topic-grid
+      use_more: false
       link_display: page_1
       display_extenders: {  }
     cache_metadata:
