@@ -243,6 +243,25 @@ display:
       use_more: false
       use_more_always: false
       link_display: page_1
+      footer:
+        about:
+          id: about
+          table: views
+          field: area
+          relationship: none
+          group_type: group
+          admin_label: ''
+          plugin_id: text
+          empty: true
+          content:
+            value: |-
+              <div class="map-about" style="max-width:860px;margin:2rem auto 0;padding:1.5rem 1.75rem;background:#fff;border:1px solid var(--color-border);border-left:4px solid var(--color-burgundy);border-radius:4px">
+                <h2 style="font-family:var(--font-serif);color:var(--color-navy);margin:0 0 0.75rem;font-size:1.4rem">About this map</h2>
+                <p style="margin:0 0 0.75rem;line-height:1.6">Each marker pins a Wikipedia Featured Article to the place it is about. Markers cluster together when you zoom out — <strong>click a cluster</strong> to zoom in, then <strong>click a marker</strong> to open its summary. In the popup, <strong>click the article's title</strong> to read the full Featured Article.</p>
+                <p style="margin:0;line-height:1.6">Only articles with geographic coordinates appear here — about 900 of the encyclopedia's highest-quality entries. Biographies, concepts and other non-geographic topics are not shown; browse those <a href="/topics">By Topic</a>, <a href="/eras">By Era</a> or <a href="/regions">By Region</a>.</p>
+              </div>
+            format: full_html
+          tokenize: false
       display_extenders: {  }
     cache_metadata:
       max-age: -1
