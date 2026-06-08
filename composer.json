@@ -11,10 +11,10 @@
         "drupal/geofield": "^1.0",
         "drupal/leaflet": "^10.4",
         "drupal/pathauto": "^1.12",
-        "drupal/scolta": "1.0.3",
         "drupal/search_api": "^1.0",
         "drush/drush": "^13",
-        "tag1/scolta-php": "1.0.3"
+        "tag1/scolta-drupal": "dev-main",
+        "tag1/scolta-php": "dev-main"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
@@ -26,9 +26,17 @@
         "drupal": {
             "type": "composer",
             "url": "https://packages.drupal.org/8"
+        },
+        "scolta-php": {
+            "type": "vcs",
+            "url": "https://github.com/tag1consulting/scolta-php"
+        },
+        "scolta-drupal": {
+            "type": "vcs",
+            "url": "https://github.com/tag1consulting/scolta-drupal"
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
         "allow-plugins": {
