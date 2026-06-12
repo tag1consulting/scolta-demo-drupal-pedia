@@ -71,10 +71,10 @@ hooks:
 
             if [ "$PASS" -eq 1 ]; then
               echo "Scolta build pass $PASS/$MAX_PASSES..."
-              ddev drush scolta:build 2>&1 || true
+              ddev drush scolta:build --bundle=featured_article 2>&1 || true
             else
               echo "Scolta resume pass $PASS/$MAX_PASSES..."
-              ddev drush scolta:build --resume 2>&1 || true
+              ddev drush scolta:build --resume --bundle=featured_article 2>&1 || true
             fi
 
             STATUS=$(ddev drush scolta:status 2>&1)
@@ -92,7 +92,7 @@ hooks:
           if [ "$BUILD_COMPLETE" = "false" ]; then
             echo ""
             echo "WARNING: Scolta indexing did not complete after $MAX_PASSES passes."
-            echo "Run 'ddev drush scolta:build --resume' to continue indexing."
+            echo "Run 'ddev drush scolta:build --resume --bundle=featured_article' to continue indexing."
             echo "Use 'ddev drush scolta:status' to check progress."
             echo ""
           fi
@@ -114,10 +114,10 @@ hooks:
 
             if [ "$PASS" -eq 1 ]; then
               echo "Scolta build pass $PASS/$MAX_PASSES..."
-              ddev drush scolta:build 2>&1 || true
+              ddev drush scolta:build --bundle=featured_article 2>&1 || true
             else
               echo "Scolta resume pass $PASS/$MAX_PASSES..."
-              ddev drush scolta:build --resume 2>&1 || true
+              ddev drush scolta:build --resume --bundle=featured_article 2>&1 || true
             fi
 
             # The build spawns background resumes on memory pressure.
@@ -135,7 +135,7 @@ hooks:
             echo "Scolta indexing complete: ${FRAGMENTS:-?} pagefind fragments."
           else
             echo "WARNING: Scolta indexing did not complete after $MAX_PASSES passes."
-            echo "Run 'ddev drush scolta:build --resume' to continue."
+            echo "Run 'ddev drush scolta:build --resume --bundle=featured_article' to continue."
           fi
         fi
 

@@ -76,8 +76,19 @@ if [ "$HAS_MODULE" != "ok" ]; then
 fi
 echo "PASS: scolta-drupal module installed"
 
-echo "==> Verifying About page setup script exists..."
-test -f scripts/setup-about-page.php || (echo "FAIL: scripts/setup-about-page.php missing from repo" && exit 1)
-echo "PASS: scripts/setup-about-page.php committed (About page created on ddev start)"
+echo "==> Verifying search corpus excludes the About page..."
+# The index must contain only featured_article nodes (scolta:build runs with
+# --bundle=featured_article). The pagefind index is gitignored and rebuilt at
+# runtime, so this guard runs against the local build output when present.
+FRAGMENT_DIR="web/sites/default/files/scolta-pagefind/pagefind/fragment"
+if [ -d "$FRAGMENT_DIR" ] && ls "$FRAGMENT_DIR" >/dev/null 2>&1; then
+  if zcat -f "$FRAGMENT_DIR"/*.pf_fragment 2>/dev/null | grep -q "About The Athenaeum"; then
+    echo "FAIL: exported corpus contains the About page (About The Athenaeum)"
+    exit 1
+  fi
+  echo "PASS: exported corpus does not contain the About page"
+else
+  echo "SKIP: no local pagefind index built ($FRAGMENT_DIR missing)"
+fi
 
 echo "==> All checks passed"
