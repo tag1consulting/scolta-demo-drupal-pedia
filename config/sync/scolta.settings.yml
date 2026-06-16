@@ -49,22 +49,25 @@ field_mappings:
     field_region: region
 scoring:
   title_match_boost: 2.0
-  title_all_terms_multiplier: 1.5
+  title_all_terms_multiplier: 2.5
+  exact_title_match_boost: 5.0
   content_match_boost: 0.5
-  recency_boost_max: 0.1
+  recency_boost_max: 0.0
   recency_half_life_days: 3650
   recency_penalty_after_days: 36500
   recency_max_penalty: 0.05
-  expand_primary_weight: 0.5
+  expand_primary_weight: 0.9
+  expand_subword_max_frequency: 0.10
+  expansion_combine_mode: round_robin
   language: en
   custom_stop_words: {  }
-  recency_strategy: exponential
+  recency_strategy: none
   recency_curve: {  }
 display:
   excerpt_length: 350
   results_per_page: 12
-  max_pagefind_results: 60
-  ai_summary_top_n: 10
+  max_pagefind_results: 75
+  ai_summary_top_n: 15
   ai_summary_max_chars: 5000
 cache_ttl: 2592000
 prompt_expand_query: ''
