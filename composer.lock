@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "652d56b8b96c40ffc60b64210cfdcecb",
+    "content-hash": "84f39e276e33b00d45f0441062e64cfb",
     "packages": [
         {
             "name": "asm89/stack-cors",
@@ -1613,17 +1613,11 @@
         },
         {
             "name": "drupal/scolta",
-            "version": "1.0.5",
+            "version": "dev-1.1.x",
             "source": {
                 "type": "git",
                 "url": "https://git.drupalcode.org/project/scolta.git",
-                "reference": "1.0.5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://ftp.drupal.org/files/projects/scolta-1.0.5.zip",
-                "reference": "1.0.5",
-                "shasum": "b0b23caa788b2f520ac5352fab18594567d4f4d7"
+                "reference": "4a955e27bddf1abbb9fc9c894c0e38dbb9dca044"
             },
             "require": {
                 "drupal/core": "^10.3 || ^11",
@@ -1644,18 +1638,19 @@
             },
             "type": "drupal-module",
             "extra": {
+                "branch-alias": {
+                    "dev-1.1.x": "1.1.x-dev",
+                    "dev-main": "1.0.x-dev"
+                },
                 "drupal": {
-                    "version": "1.0.5",
-                    "datestamp": "1782570681",
+                    "version": "1.1.x-dev",
+                    "datestamp": "1785319338",
                     "security-coverage": {
-                        "status": "covered",
-                        "message": "Covered by Drupal's security advisory policy"
+                        "status": "not-covered",
+                        "message": "Dev releases are not covered by Drupal security advisories."
                     }
                 },
-                "installer-name": "scolta",
-                "branch-alias": {
-                    "dev-main": "1.0.x-dev"
-                }
+                "installer-name": "scolta"
             },
             "autoload": {
                 "psr-4": {
@@ -1669,12 +1664,6 @@
             },
             "notification-url": "https://packages.drupal.org/8/downloads",
             "scripts": {
-                "post-install-cmd": [
-                    "@copy-assets"
-                ],
-                "post-update-cmd": [
-                    "@copy-assets"
-                ],
                 "copy-assets": [
                     "mkdir -p js js/wasm css",
                     "cp vendor/tag1/scolta-php/assets/js/scolta.js js/scolta.js",
@@ -12735,7 +12724,9 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {},
+    "stability-flags": {
+        "drupal/scolta": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {},
