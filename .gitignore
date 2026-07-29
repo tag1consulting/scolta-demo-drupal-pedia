@@ -18,6 +18,7 @@ web/sites/default/services.local.yml
 web/sites/default/files/php/
 web/sites/default/files/css/
 web/sites/default/files/js/
+web/sites/default/files/scolta-build/
 web/sites/default/files/styles/
 web/sites/default/private/
 
