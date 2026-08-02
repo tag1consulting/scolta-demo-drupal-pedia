@@ -26,6 +26,14 @@ use Tag1\Scolta\Export\ContentItem;
 const ATHENAEUM_SCOLTA_CARD_IMAGE_STYLE = 'medium';
 
 /**
+ * How many topic badges a result card paints.
+ *
+ * An article carries up to six topics; three is what fits on one badge row
+ * beside the thumbnail without wrapping the card taller than its image.
+ */
+const ATHENAEUM_SCOLTA_CARD_TOPIC_LIMIT = 3;
+
+/**
  * Implements hook_theme().
  */
 function athenaeum_scolta_theme($existing, $type, $theme, $path): array {
@@ -64,9 +72,10 @@ function athenaeum_scolta_block_view_alter(array &$build, BlockPluginInterface $
  *    becomes a separate Pagefind filter entry for faceted search. The
  *    auto-mapper comma-joins multi-value entity references; we need
  *    individual array elements instead.
- * 2. Adds per-item metadata the client-side result renderer paints on the
- *    card — a lead-image thumbnail URL plus display strings for the era and
- *    region badges — so a rich card costs no per-result server call.
+ * 2. Adds per-item metadata the client-side renderers paint — a lead-image
+ *    thumbnail URL, used by both the result card and the search-as-you-type
+ *    suggestion row, plus the topic labels the card badges — so a rich card
+ *    and a thumbnailed suggestion cost no per-result server call.
  *
  * Metadata costs only the bytes of its own keys in each fragment, unlike
  * sortable, which writes a corpus-wide pf_meta entry. The keys "title" and
@@ -104,14 +113,25 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
     }
   }
 
-  // Display-only copies of the era and region facet values, so the renderer
-  // paints its badges without parsing the filter arrays. Taken from the
-  // already-resolved filters rather than re-reading the entity, which keeps a
-  // badge's text identical to the facet value it corresponds to.
-  foreach (['era', 'region'] as $dimension) {
-    $value = _athenaeum_scolta_first_scalar($filters[$dimension] ?? NULL);
-    if ($value !== '') {
-      $metadata[$dimension] = $value;
+  // A display-only copy of the topics facet values, so the renderer paints its
+  // badges without parsing the filter arrays. Taken from the already-resolved
+  // filter rather than re-reading the entity, which keeps a badge's text
+  // identical to the facet value it corresponds to.
+  //
+  // Topics rather than era and region, which the card used to badge: on this
+  // corpus those two are degenerate — about 95% of articles are "Timeless" and
+  // about the same are "Not Geographic" — so that badge pair repeated the same
+  // two words down the whole result list. Topics spreads across 15 values.
+  // Both era and region stay filters; only their use as badge text goes away.
+  //
+  // JSON rather than a delimited string: a term label is free text, so there
+  // is no separator a future label provably cannot contain. An encoded array
+  // cannot be split wrong.
+  $topic_badges = array_slice($filters['topics'] ?? [], 0, ATHENAEUM_SCOLTA_CARD_TOPIC_LIMIT);
+  if (!empty($topic_badges)) {
+    $encoded = json_encode(array_values($topic_badges));
+    if (is_string($encoded)) {
+      $metadata['topics'] = $encoded;
     }
   }
 
@@ -172,17 +192,4 @@ function _athenaeum_scolta_card_image(FieldableEntityInterface $entity): ?array 
     'url' => $url,
     'alt' => trim((string) ($item->alt ?? '')),
   ];
-}
-
-/**
- * Flattens a resolved filter value to a single display string.
- *
- * The auto-mapper hands back a string for a single-value field and an array
- * for a multi-value one; either way a badge shows one label.
- */
-function _athenaeum_scolta_first_scalar(mixed $value): string {
-  if (is_array($value)) {
-    $value = reset($value);
-  }
-  return is_scalar($value) ? trim((string) $value) : '';
 }

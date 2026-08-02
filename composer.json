@@ -13,7 +13,8 @@
         "drupal/pathauto": "^1.12",
         "drupal/scolta": "^1.1.0",
         "drupal/search_api": "^1.0",
-        "drush/drush": "^13"
+        "drush/drush": "^13",
+        "tag1/scolta-php": "1.1.x-dev"
     },
     "require-dev": {
         "drupal/core-dev": "^11"
@@ -27,7 +28,7 @@
             "url": "https://packages.drupal.org/8"
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
         "allow-plugins": {

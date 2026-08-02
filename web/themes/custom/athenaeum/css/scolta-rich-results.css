@@ -34,8 +34,8 @@
 /* --------------------------------------------------------------------------
  * Result card
  *
- * Emitted by js/scolta-rich-results.js for articles that carry a lead image.
- * Articles without one keep Scolta's built-in text card.
+ * Emitted by js/scolta-rich-results.js for every article. One without a lead
+ * image gets the same card minus the thumbnail, not Scolta's built-in one.
  * ----------------------------------------------------------------------- */
 
 .athenaeum-result {
@@ -181,4 +181,77 @@
   font-size: 0.82rem;
   color: #6B6B6B;
   margin-top: 0.1rem;
+}
+
+/* --------------------------------------------------------------------------
+ * Thumbnailed suggestion row
+ *
+ * Inner markup emitted by the suggestion renderer in
+ * js/scolta-rich-results.js for title suggestions. The option element around
+ * it stays the bundle's, so the rules below never reach past the row's inside.
+ *
+ * Title and excerpt carry the scolta-* class as well as the athenaeum-* one,
+ * so they inherit the typography set above and these rules add only layout.
+ * Same specificity, resolved by source order — this block is last.
+ * ----------------------------------------------------------------------- */
+
+.athenaeum-sayt {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Fixed box, sized before the image arrives, so a row settles its height at
+   render and the rows under it never move as thumbnails load. */
+.athenaeum-sayt__thumb {
+  flex: 0 0 auto;
+  display: block;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-parchment-dark);
+}
+
+.athenaeum-sayt__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Two rows keep the box but draw nothing in it: a title suggestion with no
+   image, and one whose image 404s (the handler empties the box and adds this
+   class). Sized, not drawn — so every title row's text starts on the same
+   line whether or not the article has a usable picture, and a failed image
+   reflows nothing. */
+.athenaeum-sayt__thumb--empty {
+  border-color: transparent;
+  background: none;
+}
+
+.athenaeum-sayt__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* One line each, ellipsised. A suggestion is a pointer, not a summary, and a
+   row that wrapped would resize the dropdown on every keystroke. */
+.athenaeum-sayt__title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Overrides the 1.1rem glyph gutter scolta.css gives an excerpt: in this row
+   the thumbnail is the gutter, and the text column is already indented. */
+.athenaeum-sayt__excerpt {
+  display: block;
+  margin-top: 0.05rem;
+  margin-left: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
