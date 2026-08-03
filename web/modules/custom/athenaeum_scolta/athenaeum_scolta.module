@@ -10,8 +10,28 @@
  * the Scolta module.
  */
 
+use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Entity\FieldableEntityInterface;
+use Drupal\image\Entity\ImageStyle;
 use Tag1\Scolta\Export\ContentItem;
+
+/**
+ * Image style used for the search result card thumbnail.
+ *
+ * "medium" is a 220×220 scale that converts to WebP — twice the 110px box the
+ * card paints, so it stays sharp on a 2x display, and it is a style the site
+ * already defines (the featured_article teaser uses it), so no new derivative
+ * variant is introduced.
+ */
+const ATHENAEUM_SCOLTA_CARD_IMAGE_STYLE = 'medium';
+
+/**
+ * How many topic badges a result card paints.
+ *
+ * An article carries up to six topics; three is what fits on one badge row
+ * beside the thumbnail without wrapping the card taller than its image.
+ */
+const ATHENAEUM_SCOLTA_CARD_TOPIC_LIMIT = 3;
 
 /**
  * Implements hook_theme().
@@ -30,12 +50,37 @@ function athenaeum_scolta_theme($existing, $type, $theme, $path): array {
 }
 
 /**
+ * Implements hook_block_view_alter().
+ *
+ * Attaches the theme's rich result cards to the Scolta search block, so the
+ * renderer and its stylesheet load on exactly the pages the search UI is on
+ * and nowhere else — no route list to keep in sync with block placement.
+ */
+function athenaeum_scolta_block_view_alter(array &$build, BlockPluginInterface $block): void {
+  if ($block->getPluginId() === 'scolta_search') {
+    $build['#attached']['library'][] = 'athenaeum/scolta-rich-results';
+  }
+}
+
+/**
  * Implements hook_scolta_content_item_alter().
  *
- * Overrides the auto-mapped topics with a proper array so each topic
- * becomes a separate Pagefind filter entry for faceted search.
- * The auto-mapper comma-joins multi-value entity references; we need
- * individual array elements instead.
+ * Two jobs, applied in a single cloneWith() so neither override drops the
+ * other:
+ *
+ * 1. Overrides the auto-mapped topics with a proper array so each topic
+ *    becomes a separate Pagefind filter entry for faceted search. The
+ *    auto-mapper comma-joins multi-value entity references; we need
+ *    individual array elements instead.
+ * 2. Adds per-item metadata the client-side renderers paint — a lead-image
+ *    thumbnail URL, used by both the result card and the search-as-you-type
+ *    suggestion row, plus the topic labels the card badges — so a rich card
+ *    and a thumbnailed suggestion cost no per-result server call.
+ *
+ * Metadata costs only the bytes of its own keys in each fragment, unlike
+ * sortable, which writes a corpus-wide pf_meta entry. The keys "title" and
+ * "date" are deliberately avoided: they lose to the built-in values on a
+ * collision.
  *
  * Sortable fields (word_count, reference_count) and single-value
  * filters (era, region) are handled by field_mappings config.
@@ -45,6 +90,9 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
     return;
   }
 
+  $filters = $item->filters;
+  $metadata = $item->metadata;
+
   if ($entity->hasField('field_topics') && !$entity->get('field_topics')->isEmpty()) {
     $topics = [];
     foreach ($entity->get('field_topics') as $ref) {
@@ -53,9 +101,95 @@ function athenaeum_scolta_scolta_content_item_alter(ContentItem &$item, Fieldabl
       }
     }
     if (!empty($topics)) {
-      $filters = $item->filters;
       $filters['topics'] = $topics;
-      $item = $item->cloneWith(['filters' => $filters]);
     }
   }
+
+  $image = _athenaeum_scolta_card_image($entity);
+  if ($image !== NULL) {
+    $metadata['image'] = $image['url'];
+    if ($image['alt'] !== '') {
+      $metadata['image_alt'] = $image['alt'];
+    }
+  }
+
+  // A display-only copy of the topics facet values, so the renderer paints its
+  // badges without parsing the filter arrays. Taken from the already-resolved
+  // filter rather than re-reading the entity, which keeps a badge's text
+  // identical to the facet value it corresponds to.
+  //
+  // Topics rather than era and region, which the card used to badge: on this
+  // corpus those two are degenerate — about 95% of articles are "Timeless" and
+  // about the same are "Not Geographic" — so that badge pair repeated the same
+  // two words down the whole result list. Topics spreads across 15 values.
+  // Both era and region stay filters; only their use as badge text goes away.
+  //
+  // JSON rather than a delimited string: a term label is free text, so there
+  // is no separator a future label provably cannot contain. An encoded array
+  // cannot be split wrong.
+  $topic_badges = array_slice($filters['topics'] ?? [], 0, ATHENAEUM_SCOLTA_CARD_TOPIC_LIMIT);
+  if (!empty($topic_badges)) {
+    $encoded = json_encode(array_values($topic_badges));
+    if (is_string($encoded)) {
+      $metadata['topics'] = $encoded;
+    }
+  }
+
+  if ($filters !== $item->filters || $metadata !== $item->metadata) {
+    $item = $item->cloneWith([
+      'filters' => $filters,
+      'metadata' => $metadata,
+    ]);
+  }
+}
+
+/**
+ * Resolves an article's lead image to a card thumbnail URL and alt text.
+ *
+ * The URL is root-relative so the index stays portable across the DDEV site,
+ * the container image and any deployed host. It carries the derivative's itok
+ * token because image.settings has allow_insecure_derivatives: false and the
+ * styles directory is not shipped — without the token, the first request for a
+ * not-yet-generated derivative is refused, which on this corpus is nearly every
+ * image.
+ *
+ * @param \Drupal\Core\Entity\FieldableEntityInterface $entity
+ *   The article being indexed.
+ *
+ * @return array{url: string, alt: string}|null
+ *   The thumbnail URL and alt text, or NULL when the article has no usable
+ *   lead image. A NULL simply means the fragment carries no "image" key and
+ *   the renderer falls back to the built-in text card for that result.
+ */
+function _athenaeum_scolta_card_image(FieldableEntityInterface $entity): ?array {
+  if (!$entity->hasField('field_image') || $entity->get('field_image')->isEmpty()) {
+    return NULL;
+  }
+
+  $item = $entity->get('field_image')->first();
+  if ($item === NULL) {
+    return NULL;
+  }
+
+  $file = $item->entity;
+  if ($file === NULL) {
+    return NULL;
+  }
+
+  $uri = $file->getFileUri();
+  if (!is_string($uri) || $uri === '') {
+    return NULL;
+  }
+
+  $style = ImageStyle::load(ATHENAEUM_SCOLTA_CARD_IMAGE_STYLE);
+  if ($style === NULL) {
+    return NULL;
+  }
+
+  $url = \Drupal::service('file_url_generator')->transformRelative($style->buildUrl($uri));
+
+  return [
+    'url' => $url,
+    'alt' => trim((string) ($item->alt ?? '')),
+  ];
 }

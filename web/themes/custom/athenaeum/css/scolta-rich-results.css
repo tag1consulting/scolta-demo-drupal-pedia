@@ -1,0 +1,257 @@
+/**
+ * @file
+ * Athenaeum styling for Scolta's result cards and search-as-you-type dropdown.
+ *
+ * Loaded after the module's scolta.css, which is never edited. Two techniques
+ * only: override the documented custom properties, and style the theme's own
+ * athenaeum-* classes on the markup its result renderer emits. No selector
+ * here is more specific than one class.
+ */
+
+/* Retheme Scolta's neutral palette to the library aesthetic. scolta.css
+   declares these on :root; this file loads after it, so a same-specificity
+   redeclaration is all it takes. */
+:root {
+  --scolta-primary: var(--color-navy);
+  --scolta-primary-hover: #142a48;
+  --scolta-accent: var(--color-link);
+  --scolta-card-bg: var(--color-card-bg);
+  --scolta-text: var(--color-charcoal);
+  --scolta-border: var(--color-border);
+  --scolta-highlight: #F6E7B8;
+  --scolta-badge-bg: var(--color-parchment-dark);
+
+  /* Search-as-you-type. The seven documented knobs, nothing more. */
+  --scolta-sayt-bg: var(--color-card-bg);
+  --scolta-sayt-border: var(--color-border);
+  --scolta-sayt-shadow: 0 8px 24px rgba(45, 45, 45, 0.16);
+  --scolta-sayt-radius: 4px;
+  --scolta-sayt-max-height: 24rem;
+  --scolta-sayt-active-bg: var(--color-parchment-dark);
+  --scolta-sayt-z-index: 60;
+}
+
+/* --------------------------------------------------------------------------
+ * Result card
+ *
+ * Emitted by js/scolta-rich-results.js for every article. One without a lead
+ * image gets the same card minus the thumbnail, not Scolta's built-in one.
+ * ----------------------------------------------------------------------- */
+
+.athenaeum-result {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+/* Fixed box, so the card's height is settled before the image arrives and
+   nothing below it moves when it does. */
+.athenaeum-result__thumb {
+  flex: 0 0 auto;
+  display: block;
+  width: 110px;
+  height: 110px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--color-parchment-dark);
+}
+
+.athenaeum-result__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A thumbnail that 404s takes its own box with it rather than leaving a hole;
+   the rest of the card is already laid out as text, so nothing else moves. */
+.athenaeum-result--thumb-failed .athenaeum-result__thumb {
+  display: none;
+}
+
+.athenaeum-result__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.athenaeum-result__title {
+  font-family: var(--font-serif);
+  color: var(--color-navy);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.athenaeum-result__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0.35rem 0 0.4rem;
+}
+
+.athenaeum-result__date {
+  font-size: 0.8rem;
+  color: #6B6B6B;
+}
+
+.athenaeum-result__badge {
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-parchment-dark);
+  color: var(--color-burgundy);
+  white-space: nowrap;
+}
+
+.athenaeum-result__excerpt {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  .athenaeum-result__thumb {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+ * Search-as-you-type dropdown
+ *
+ * Layout and rhythm only. The dropdown stays absolutely positioned inside
+ * .scolta-search-input-wrap, so opening and updating it shifts nothing.
+ * ----------------------------------------------------------------------- */
+
+.scolta-sayt {
+  font-family: var(--font-sans);
+  padding: 0.25rem 0;
+}
+
+.scolta-sayt-option {
+  padding: 0.55rem 0.9rem;
+  border-bottom: none;
+  border-left: 3px solid transparent;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+
+.scolta-sayt-option:hover {
+  background: var(--color-parchment);
+}
+
+.scolta-sayt-option-active {
+  border-left-color: var(--color-gold);
+}
+
+.scolta-sayt-kind {
+  color: var(--color-gold);
+  font-size: 0.95rem;
+}
+
+.scolta-sayt-title {
+  font-family: var(--font-serif);
+  font-size: 0.98rem;
+  color: var(--color-charcoal);
+}
+
+/* A recent search is history, not a document: sans-serif and quieter, so the
+   two kinds of row are told apart without reading the glyph. */
+.scolta-sayt-option-recent .scolta-sayt-kind {
+  color: #9A9A9A;
+}
+
+.scolta-sayt-option-recent .scolta-sayt-title {
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.scolta-sayt-excerpt {
+  font-size: 0.82rem;
+  color: #6B6B6B;
+  margin-top: 0.1rem;
+}
+
+/* --------------------------------------------------------------------------
+ * Thumbnailed suggestion row
+ *
+ * Inner markup emitted by the suggestion renderer in
+ * js/scolta-rich-results.js for title suggestions. The option element around
+ * it stays the bundle's, so the rules below never reach past the row's inside.
+ *
+ * Title and excerpt carry the scolta-* class as well as the athenaeum-* one,
+ * so they inherit the typography set above and these rules add only layout.
+ * Same specificity, resolved by source order — this block is last.
+ * ----------------------------------------------------------------------- */
+
+.athenaeum-sayt {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* Fixed box, sized before the image arrives, so a row settles its height at
+   render and the rows under it never move as thumbnails load. */
+.athenaeum-sayt__thumb {
+  flex: 0 0 auto;
+  display: block;
+  width: 36px;
+  height: 36px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-parchment-dark);
+}
+
+.athenaeum-sayt__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Two rows keep the box but draw nothing in it: a title suggestion with no
+   image, and one whose image 404s (the handler empties the box and adds this
+   class). Sized, not drawn — so every title row's text starts on the same
+   line whether or not the article has a usable picture, and a failed image
+   reflows nothing. */
+.athenaeum-sayt__thumb--empty {
+  border-color: transparent;
+  background: none;
+}
+
+.athenaeum-sayt__text {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* One line each, ellipsised. A suggestion is a pointer, not a summary, and a
+   row that wrapped would resize the dropdown on every keystroke. */
+.athenaeum-sayt__title {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Overrides the 1.1rem glyph gutter scolta.css gives an excerpt: in this row
+   the thumbnail is the gutter, and the text column is already indented. */
+.athenaeum-sayt__excerpt {
+  display: block;
+  margin-top: 0.05rem;
+  margin-left: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
