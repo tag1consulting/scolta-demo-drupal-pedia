@@ -173,6 +173,9 @@ RUN ln -sf /var/www/html/web/sites/default/instances/docker/settings.local.php w
     ln -sf /var/www/html/vendor/drush/drush/drush /usr/local/bin/drush && \
     ln -sf /var/www/html/vendor/drush/drush/drush.php /usr/local/bin/drush.php
 
+# https://www.drupal.org/sa-core-2026-017
+RUN rm -f /var/www/html/web/core/install.php
+
 RUN chown -R 1001:0 web/sites/default/private && \
     chmod -R g+w web/sites/default/private
 
